@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rinkl AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: '#1a73e8',
+              'primary-dark': '#0d62d9',
+              'chat-user': '#2c3e50',
+              'chat-ai': '#f1f3f4',
+            },
+            fontFamily: {
+              sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      
+      .typing-dots span { animation: typing 1.4s infinite; opacity: 0.6; }
+      .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+      .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes typing { 0%, 60%, 100% { opacity: 0.6; } 30% { opacity: 1; } }
+
+      /* Feedback Screen Styles */
+      .feedback-root {
+          font-family: 'Arial', sans-serif;
+          background-color: #f5f5f5;
+          min-height: 100vh;
+          padding: 20px;
+          color: #333;
+      }
+      .fb-back-button {
+          position: absolute;
+          top: 20px;
+          left: 20px;
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: #0066cc;
+          padding: 10px;
+      }
+      .fb-back-button:hover {
+          background: #e6f2ff;
+          border-radius: 50%;
+      }
+      .fb-logo-container {
+          text-align: center;
+          margin-top: 20px;
+          margin-bottom: 30px;
+      }
+      .fb-logo {
+          color: #0066cc;
+          font-size: 42px;
+          font-weight: bold;
+      }
+      .fb-beta {
+          font-size: 14px;
+          color: black;
+          display: block;
+          margin-top: -5px;
+      }
+      .fb-container {
+          max-width: 800px;
+          margin: 0 auto;
+          background: white;
+          border-radius: 15px;
+          padding: 30px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      }
+      .fb-title {
+          text-align: center;
+          color: #333;
+          font-size: 28px;
+          margin-bottom: 30px;
+          font-weight: 600;
+      }
+      .fb-form-group {
+          margin-bottom: 20px;
+      }
+      .fb-label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 500;
+          color: #333;
+      }
+      .fb-input, .fb-textarea, .fb-select {
+          width: 100%;
+          padding: 12px;
+          border: 2px solid #ddd;
+          border-radius: 8px;
+          font-size: 16px;
+          transition: border-color 0.3s;
+          background-color: white;
+          color: #333;
+      }
+      .fb-input:focus, .fb-textarea:focus, .fb-select:focus {
+          outline: none;
+          border-color: #0066cc;
+      }
+      .fb-textarea {
+          resize: vertical;
+          min-height: 120px;
+      }
+      .fb-submit-button {
+          background: #0066cc;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 15px 30px;
+          font-size: 18px;
+          cursor: pointer;
+          transition: background 0.3s;
+          width: 100%;
+      }
+      .fb-submit-button:hover {
+          background: #0052a3;
+      }
+      .fb-submit-button:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+      }
+      .fb-message {
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 20px;
+          text-align: center;
+          font-weight: 500;
+      }
+      .fb-success-message {
+          background: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+      }
+      .fb-error-message {
+          background: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+      }
+      .fb-hidden {
+          display: none;
+      }
+      .fb-reviews-section {
+          margin-top: 40px;
+          border-top: 2px solid #eee;
+          padding-top: 30px;
+      }
+      .fb-review-item {
+          background: #f8f9fa;
+          border-radius: 10px;
+          padding: 20px;
+          margin-bottom: 15px;
+          border-left: 4px solid #0066cc;
+      }
+      .fb-review-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+      }
+      .fb-review-type {
+          background: #0066cc;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 500;
+      }
+      .fb-review-date {
+          color: #666;
+          font-size: 12px;
+      }
+      .fb-review-message {
+          color: #333;
+          line-height: 1.5;
+          margin-bottom: 10px;
+      }
+      .fb-admin-response {
+          background: #e6f2ff;
+          border-radius: 8px;
+          padding: 15px;
+          margin-top: 10px;
+          border-left: 3px solid #0052a3;
+      }
+      .fb-response-label {
+          font-weight: 600;
+          color: #0052a3;
+          margin-bottom: 5px;
+      }
+      .fb-no-reviews {
+          text-align: center;
+          color: #666;
+          padding: 40px;
+          font-style: italic;
+      }
+      .fb-loading {
+          text-align: center;
+          color: #666;
+          padding: 20px;
+      }
+    </style>
+    <!-- React Dependencies (UMD) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Import Map for Modules -->
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+<body class="bg-[#f5f7fa] text-[#333] overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module" data-presets="react,typescript">
+        import { GoogleGenAI } from "@google/genai";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get, update, push, set, query, orderByChild, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const { useState, useEffect, useRef } = React;
+        
+        const API_KEYS = [
+            "AIzaSyAU-BK_uOte2K72RUhVW-dKTtCpaXUxVRM",
+            "AIzaSyBPD3KLbmXe1HzbOJtmC4iqxpJhncRUE-Y",
+            "AIzaSyDk0tuyVpWEdqZ0-EUJXNntMK3YOGA1g8g",
+            "AIzaSyA_tf9A72GxzpcC7v1lXWFQGqkVFWBN820"
+        ];
+
+        // --- TYPES & CONSTANTS ---
+        
+        const SUPPORTED_LANGUAGES = {
+            ru: 'Русский',
+            en: 'English',
+            es: 'Español',
+            cn: 'Chinese',
+            de: 'Deutsch'
+        };
+
+        const TRANSLATIONS = {
+            ru: {
+                newChat: 'Новый чат',
+                settings: 'Настройки',
+                chat: 'Чат',
+                newConversation: 'Новый разговор',
+                typeMessage: 'Введите сообщение...',
+                editMessage: 'Редактировать сообщение',
+                cancel: 'Отмена',
+                saveRegenerate: 'Сохранить и перегенерировать',
+                dataManagement: 'Управление данными',
+                usedStorage: 'Использовано памяти',
+                clearCache: 'Очистить кэш',
+                language: 'Язык',
+                appearance: 'Оформление',
+                feedback: 'Обратная связь',
+                confirmClear: 'Вы уверены, что хотите удалить все сохраненные данные? Это действие нельзя отменить.',
+                deleteChat: 'Удалить этот чат?',
+                errorNetwork: 'Ошибка: Не удалось подключиться к сервису AI.',
+                noResponse: 'Нет ответа.',
+                copy: 'Копировать',
+                edit: 'Изменить',
+                light: 'Светлая',
+                dark: 'Темная',
+                auto: 'Авто',
+                feedbackBtn: 'Обратная связь'
+            },
+            en: {
+                newChat: 'New Chat',
+                settings: 'Settings',
+                chat: 'Chat',
+                newConversation: 'New Conversation',
+                typeMessage: 'Type a message...',
+                editMessage: 'Edit Message',
+                cancel: 'Cancel',
+                saveRegenerate: 'Save & Regenerate',
+                dataManagement: 'Data Management',
+                usedStorage: 'Used Storage',
+                clearCache: 'Clear Cache',
+                language: 'Language',
+                appearance: 'Appearance',
+                feedback: 'Feedback',
+                confirmClear: 'Are you sure you want to delete all saved data? This cannot be undone.',
+                deleteChat: 'Delete this chat?',
+                errorNetwork: 'Error: Could not connect to AI service.',
+                noResponse: 'No response.',
+                copy: 'Copy',
+                edit: 'Edit',
+                light: 'Light',
+                dark: 'Dark',
+                auto: 'Auto',
+                feedbackBtn: 'Feedback'
+            },
+            es: {
+                newChat: 'Nuevo Chat',
+                settings: 'Ajustes',
+                chat: 'Chat',
+                newConversation: 'Nueva Conversación',
+                typeMessage: 'Escribe un mensaje...',
+                editMessage: 'Editar Mensaje',
+                cancel: 'Cancelar',
+                saveRegenerate: 'Guardar y Regenerar',
+                dataManagement: 'Gestión de Datos',
+                usedStorage: 'Almacenamiento Usado',
+                clearCache: 'Borrar Caché',
+                language: 'Idioma',
+                appearance: 'Apariencia',
+                feedback: 'Comentarios',
+                confirmClear: '¿Estás seguro de que quieres borrar todos los datos guardados? Esto no se puede deshacer.',
+                deleteChat: '¿Borrar este chat?',
+                errorNetwork: 'Error: No se pudo conectar al servicio de IA.',
+                noResponse: 'Sin respuesta.',
+                copy: 'Copiar',
+                edit: 'Editar',
+                light: 'Claro',
+                dark: 'Oscuro',
+                auto: 'Auto',
+                feedbackBtn: 'Comentarios'
+            },
+            cn: {
+                newChat: '新聊天',
+                settings: '设置',
+                chat: '聊天',
+                newConversation: '新对话',
+                typeMessage: '输入消息...',
+                editMessage: '编辑消息',
+                cancel: '取消',
+                saveRegenerate: '保存并重新生成',
+                dataManagement: '数据管理',
+                usedStorage: '已用存储',
+                clearCache: '清除缓存',
+                language: '语言',
+                appearance: '外观',
+                feedback: '反馈',
+                confirmClear: '您确定要删除所有保存的数据吗？此操作无法撤销。',
+                deleteChat: '删除此聊天？',
+                errorNetwork: '错误：无法连接到 AI 服务。',
+                noResponse: '无响应。',
+                copy: '复制',
+                edit: '编辑',
+                light: '浅色',
+                dark: '深色',
+                auto: '自动',
+                feedbackBtn: '反馈'
+            },
+            de: {
+                newChat: 'Neuer Chat',
+                settings: 'Einstellungen',
+                chat: 'Chat',
+                newConversation: 'Neue Unterhaltung',
+                typeMessage: 'Nachricht eingeben...',
+                editMessage: 'Nachricht bearbeiten',
+                cancel: 'Abbrechen',
+                saveRegenerate: 'Speichern & Neu generieren',
+                dataManagement: 'Datenverwaltung',
+                usedStorage: 'Genutzter Speicher',
+                clearCache: 'Cache leeren',
+                language: 'Sprache',
+                appearance: 'Erscheinungsbild',
+                feedback: 'Feedback',
+                confirmClear: 'Sind Sie sicher, dass Sie alle gespeicherten Daten löschen möchten? Dies kann nicht rückgängig gemacht werden.',
+                deleteChat: 'Diesen Chat löschen?',
+                errorNetwork: 'Fehler: Konnte keine Verbindung zum KI-Dienst herstellen.',
+                noResponse: 'Keine Antwort.',
+                copy: 'Kopieren',
+                edit: 'Bearbeiten',
+                light: 'Hell',
+                dark: 'Dunkel',
+                auto: 'Auto',
+                feedbackBtn: 'Feedback'
+            }
+        };
+
+        const getTranslation = (lang, key) => {
+            return TRANSLATIONS[lang]?.[key] || TRANSLATIONS['en'][key] || key;
+        };
+
+        // --- COMPONENTS ---
+
+        // InvitationScreen
+        const InvitationScreen = ({ onEnter }) => {
+            const [inputs, setInputs] = useState(Array(6).fill(''));
+            const [error, setError] = useState(false);
+            const [isValidating, setIsValidating] = useState(false);
+            const inputRefs = useRef([]);
+
+            // Memoize Firebase refs to prevent re-initialization
+            const firebaseApp = useRef(null);
+            const database = useRef(null);
+
+            useEffect(() => {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
+                    authDomain: "talker-7e14c.firebaseapp.com",
+                    databaseURL: "https://talker-7e14c-default-rtdb.firebaseio.com",
+                    projectId: "talker-7e14c",
+                    storageBucket: "talker-7e14c.firebasestorage.app",
+                    messagingSenderId: "615957572269",
+                    appId: "1:615957572269:web:6b082400bbdd3a69d23424",
+                    measurementId: "G-KEDM752JXL"
+                };
+                
+                try {
+                    // Check if already initialized to avoid duplicate app error
+                    firebaseApp.current = initializeApp(firebaseConfig);
+                    database.current = getDatabase(firebaseApp.current);
+                } catch (e) {
+                    // console.error("Firebase init error (likely already initialized)", e);
+                    // If already init, just get the existing one if possible or ignore
+                }
+                
+                if (inputRefs.current[0]) inputRefs.current[0].focus();
+            }, []);
+
+            const handleInput = (index, value) => {
+                const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                const newInputs = [...inputs];
+                newInputs[index] = cleaned.slice(0, 1);
+                setInputs(newInputs);
+                if (error) setError(false);
+                if (cleaned && index < 5 && inputRefs.current[index + 1]) {
+                    inputRefs.current[index + 1].focus();
+                }
+            };
+
+            const handleKeyDown = (index, e) => {
+                if (e.key === 'Backspace' && !inputs[index] && index > 0) {
+                    inputRefs.current[index - 1].focus();
+                }
+            };
+
+            const handlePaste = (e) => {
+                e.preventDefault();
+                const pasteData = e.clipboardData.getData('text').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                if (pasteData.length >= 6) {
+                    const chars = pasteData.split('').slice(0, 6);
+                    setInputs(chars);
+                    inputRefs.current[5]?.focus();
+                }
+            };
+
+            const checkCode = async () => {
+                setIsValidating(true);
+                const code = inputs.join('');
+                try {
+                    // Reuse global firebase or init local if needed. Since we are in module, re-init might throw.
+                    // Better to rely on what we have. 
+                    // To be safe, re-declare config locally for this scope if not using global app.
+                    const firebaseConfig = {
+                        apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
+                        authDomain: "talker-7e14c.firebaseapp.com",
+                        databaseURL: "https://talker-7e14c-default-rtdb.firebaseio.com",
+                        projectId: "talker-7e14c",
+                        storageBucket: "talker-7e14c.firebasestorage.app",
+                        messagingSenderId: "615957572269",
+                        appId: "1:615957572269:web:6b082400bbdd3a69d23424",
+                        measurementId: "G-KEDM752JXL"
+                    };
+                    const app = initializeApp(firebaseConfig, "invitationApp"); // Use named app to avoid conflict
+                    const db = getDatabase(app);
+
+                    const codeRef = ref(db, 'inviteCodes/' + code);
+                    const snapshot = await get(codeRef);
+                    if (snapshot.exists()) {
+                        const codeData = snapshot.val();
+                        if (codeData.used) {
+                            showError();
+                        } else {
+                            await update(codeRef, { used: true });
+                            onEnter();
+                        }
+                    } else {
+                        showError();
+                    }
+                } catch (err) {
+                    console.error('Error checking code:', err);
+                    if (code === "DEMO01") onEnter(); else showError();
+                } finally {
+                    setIsValidating(false);
+                }
+            };
+
+            const showError = () => {
+                setError(true);
+                setTimeout(() => {
+                    setError(false);
+                    setInputs(Array(6).fill(''));
+                    inputRefs.current[0]?.focus();
+                }, 2000);
+            };
+
+            const isComplete = inputs.every(char => char.length > 0);
+
+            return (
+                <div className="flex flex-col items-center justify-between min-h-screen p-5 bg-[#f5f5f5]">
+                    <div className="text-center mt-10">
+                        <div className="text-[#0066cc] text-5xl font-bold relative inline-block mb-1">Rinkl</div>
+                        <span className="text-black text-base block -mt-1">beta</span>
+                    </div>
+                    <div className="text-center mt-[15vh] w-full max-w-md">
+                        <h1 className="text-3xl text-black mb-10 leading-snug">Enter your invitation code</h1>
+                        <div className="flex justify-center gap-2 mb-10">
+                            {inputs.map((val, idx) => (
+                                <input
+                                    key={idx}
+                                    ref={el => { inputRefs.current[idx] = el }}
+                                    type="text"
+                                    className={`w-10 h-[50px] text-center text-2xl border-2 rounded-md outline-none transition-colors duration-300 uppercase ${error ? 'border-red-500' : 'border-gray-300 focus:border-[#0066cc]'}`}
+                                    maxLength={1}
+                                    value={val}
+                                    onChange={(e) => handleInput(idx, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                                    onPaste={handlePaste}
+                                    disabled={isValidating}
+                                />
+                            ))}
+                        </div>
+                        {error && (
+                            <div className="mb-5 animate-bounce">
+                                <div className="text-4xl text-red-500 mb-2">✕</div>
+                                <div className="text-red-500 text-lg font-bold">ERROR</div>
+                            </div>
+                        )}
+                        <button
+                            onClick={checkCode}
+                            disabled={!isComplete || isValidating}
+                            className={`bg-[#a0d2eb] border-none rounded-full px-10 py-4 text-lg text-black cursor-pointer transition-colors duration-300 mt-[10vh] hover:bg-[#8bc5e3] disabled:bg-[#cccccc] disabled:cursor-not-allowed`}
+                        >
+                            {isValidating ? 'CHECKING...' : 'ENTER'}
+                        </button>
+                    </div>
+                    <div className="h-10"></div>
+                </div>
+            );
+        };
+
+        // FeedbackScreen
+        const FeedbackScreen = ({ onBack }) => {
+            const [type, setType] = useState('');
+            const [message, setMessage] = useState('');
+            const [status, setStatus] = useState({ type: '', msg: '' });
+            const [reviews, setReviews] = useState([]);
+            const [isSending, setIsSending] = useState(false);
+            const [userId] = useState(() => {
+                let uid = localStorage.getItem('userId');
+                if (!uid) {
+                    uid = 'user_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('userId', uid);
+                }
+                return uid;
+            });
+
+            // Firebase ref for Feedback
+            const dbRef = useRef(null);
+
+            useEffect(() => {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
+                    authDomain: "talker-7e14c.firebaseapp.com",
+                    databaseURL: "https://talker-7e14c-default-rtdb.firebaseio.com",
+                    projectId: "talker-7e14c",
+                    storageBucket: "talker-7e14c.firebasestorage.app",
+                    messagingSenderId: "615957572269",
+                    appId: "1:615957572269:web:6b082400bbdd3a69d23424",
+                    measurementId: "G-KEDM752JXL"
+                };
+                
+                // Initialize dedicated app for feedback to avoid conflicts
+                let app;
+                try {
+                     app = initializeApp(firebaseConfig, 'feedbackApp');
+                } catch(e) {
+                     // If already exists
+                     // eslint-disable-next-line no-undef
+                     // We can't access `firebase.apps` directly here easily without global firebase object, 
+                     // so just try-catch. If it fails, we might rely on re-initialization logic or existing instance.
+                     // But strictly speaking, the SDK handles idempotency if name is same.
+                     // A safer way is using random name or ensuring singleton.
+                     app = initializeApp(firebaseConfig, 'feedbackApp_' + Math.random());
+                }
+                const database = getDatabase(app);
+                dbRef.current = database;
+                
+                loadUserReviews(database);
+            }, []);
+
+            const loadUserReviews = (db) => {
+                const feedbackRef = ref(db, 'feedback');
+                const userFeedbackQuery = query(feedbackRef, orderByChild('userId'));
+                onValue(userFeedbackQuery, (snapshot) => {
+                    const feedbacks = [];
+                    if (snapshot.exists()) {
+                        snapshot.forEach((childSnapshot) => {
+                            const feedback = childSnapshot.val();
+                            if (feedback.userId === userId) {
+                                feedbacks.push(feedback);
+                            }
+                        });
+                    }
+                    feedbacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    setReviews(feedbacks);
+                });
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!type || !message) {
+                    setStatus({ type: 'error', msg: 'Please fill all fields' });
+                    return;
+                }
+                setIsSending(true);
+                try {
+                    const feedbackRef = push(ref(dbRef.current, 'feedback'));
+                    await set(feedbackRef, {
+                        id: feedbackRef.key,
+                        userId: userId,
+                        type: type,
+                        message: message,
+                        createdAt: new Date().toISOString(),
+                        status: 'new',
+                        adminResponse: null,
+                        respondedAt: null
+                    });
+                    setStatus({ type: 'success', msg: 'Thank you! Your message has been sent.' });
+                    setMessage('');
+                    setType('');
+                } catch (error) {
+                    console.error('Error sending feedback:', error);
+                    setStatus({ type: 'error', msg: 'Error sending message. Please try again.' });
+                } finally {
+                    setIsSending(false);
+                    setTimeout(() => setStatus({ type: '', msg: '' }), 5000);
+                }
+            };
+
+            const typeLabels = {
+                'feedback': 'Feedback',
+                'bug': 'Bug Report',
+                'question': 'Question',
+                'suggestion': 'Suggestion',
+                'other': 'Other'
+            };
+
+            return (
+                <div className="feedback-root absolute inset-0 z-50 overflow-y-auto">
+                    <button className="fb-back-button" onClick={onBack}>←</button>
+                    <div className="fb-logo-container">
+                        <div className="fb-logo">Rinkl</div>
+                        <span className="fb-beta">beta</span>
+                    </div>
+                    <div className="fb-container">
+                        <h1 className="fb-title">Feedback & Support</h1>
+                        <form onSubmit={handleSubmit} id="feedbackForm">
+                            <div className="fb-form-group">
+                                <label htmlFor="type" className="fb-label">Type of message</label>
+                                <select id="type" className="fb-select" value={type} onChange={(e) => setType(e.target.value)} required>
+                                    <option value="">Select type</option>
+                                    <option value="feedback">Feedback</option>
+                                    <option value="bug">Bug Report</option>
+                                    <option value="question">Question</option>
+                                    <option value="suggestion">Suggestion</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div className="fb-form-group">
+                                <label htmlFor="message" className="fb-label">Your message</label>
+                                <textarea id="message" className="fb-textarea" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Please describe your feedback, question, or issue..." required></textarea>
+                            </div>
+                            <button type="submit" className="fb-submit-button" disabled={isSending}>
+                                {isSending ? 'Sending...' : 'Send Message'}
+                            </button>
+                        </form>
+                        
+                        {status.msg && (
+                            <div className={status.type === 'error' ? 'fb-error-message fb-message' : 'fb-success-message fb-message'}>
+                                {status.msg}
+                            </div>
+                        )}
+
+                        <div className="fb-reviews-section">
+                            <h2 style={{textAlign: 'center', marginBottom: '20px', color: '#333'}}>My Messages</h2>
+                            <div id="reviewsList">
+                                {reviews.length === 0 ? (
+                                    <div className="fb-no-reviews">No messages yet. Send your first message!</div>
+                                ) : (
+                                    reviews.map((feedback) => (
+                                        <div key={feedback.id} className="fb-review-item">
+                                            <div className="fb-review-header">
+                                                <span className="fb-review-type">{typeLabels[feedback.type]}</span>
+                                                <span className="fb-review-date">{new Date(feedback.createdAt).toLocaleDateString('en-US')}</span>
+                                            </div>
+                                            <div className="fb-review-message">{feedback.message}</div>
+                                            {feedback.adminResponse ? (
+                                                <div className="fb-admin-response">
+                                                    <div className="fb-response-label">Admin Response:</div>
+                                                    <div>{feedback.adminResponse}</div>
+                                                    <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>
+                                                        Responded: {new Date(feedback.respondedAt).toLocaleDateString('en-US')}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{color: '#666', fontSize: '14px', fontStyle: 'italic'}}>
+                                                    Waiting for admin response...
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // SettingsModal
+        const SettingsModal = ({ isOpen, onClose, settings, onUpdateSettings, onClearData, onOpenFeedback }) => {
+            const [storageSize, setStorageSize] = useState('0 KB');
+            const t = (key) => getTranslation(settings.language, key);
+
+            useEffect(() => {
+                if (isOpen) calculateStorage();
+            }, [isOpen]);
+
+            const calculateStorage = () => {
+                let total = 0;
+                for (const key in localStorage) {
+                    if (localStorage.hasOwnProperty(key)) {
+                        total += (localStorage[key].length + key.length) * 2;
+                    }
+                }
+                setStorageSize((total / 1024).toFixed(2) + ' KB');
+            };
+
+            const handleClearCache = () => {
+                if (window.confirm(t('confirmClear'))) {
+                    onClearData();
+                    calculateStorage();
+                }
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                            <h2 className="text-xl font-bold dark:text-white">{t('settings')}</h2>
+                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto space-y-6">
+                            {/* Data Management */}
+                            <section>
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('dataManagement')}</h3>
+                                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <span className="text-gray-700 dark:text-gray-300">{t('usedStorage')}</span>
+                                        <span className="font-mono text-gray-900 dark:text-white font-medium">{storageSize}</span>
+                                    </div>
+                                    <button onClick={handleClearCache} className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition-colors shadow-sm">
+                                        {t('clearCache')}
+                                    </button>
+                                </div>
+                            </section>
+                            {/* Language */}
+                            <section>
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('language')}</h3>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.keys(SUPPORTED_LANGUAGES).map((lang) => (
+                                        <button key={lang} onClick={() => onUpdateSettings({ language: lang })} className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${settings.language === lang ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 ring-2 ring-blue-500/20' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700/50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+                                            {SUPPORTED_LANGUAGES[lang]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+                            {/* Appearance */}
+                            <section>
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('appearance')}</h3>
+                                <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                                    {['light', 'dark', 'auto'].map((mode) => (
+                                        <button key={mode} onClick={() => onUpdateSettings({ theme: mode })} className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-all ${settings.theme === mode ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                                            {t(mode)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+                            {/* Feedback Button */}
+                            <button onClick={onOpenFeedback} className="w-full py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                {t('feedbackBtn')}
+                            </button>
+                        </div>
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
+                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.32</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ChatScreen
+        const ChatScreen = ({ settings, onUpdateSettings, onNavigateFeedback }) => {
+            const [chats, setChats] = useState({});
+            const [currentChatId, setCurrentChatId] = useState('default');
+            const [inputText, setInputText] = useState('');
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [isTyping, setIsTyping] = useState(false);
+            const [mediaList, setMediaList] = useState([]);
+            const [connectionStatus, setConnectionStatus] = useState('connected');
+            const [editingMessageId, setEditingMessageId] = useState(null);
+            const [editText, setEditText] = useState('');
+            
+            const messagesEndRef = useRef(null);
+            const textareaRef = useRef(null);
+            const fileInputRef = useRef(null);
+            
+            const t = (key) => getTranslation(settings.language, key);
+
+            useEffect(() => {
+                const load = () => {
+                    const savedChats = localStorage.getItem('rinkl_ai_chats');
+                    if (savedChats) {
+                        try {
+                            const parsed = JSON.parse(savedChats);
+                            setChats(parsed);
+                            if (!parsed['default'] && Object.keys(parsed).length === 0) setChats({ 'default': [] });
+                            else if (!parsed[currentChatId]) setCurrentChatId(Object.keys(parsed)[0]);
+                        } catch (e) { setChats({ 'default': [] }); }
+                    } else { setChats({ 'default': [] }); }
+                };
+                load();
+            }, []);
+
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [chats, currentChatId, isTyping]);
+
+            useEffect(() => {
+                if (Object.keys(chats).length > 0) localStorage.setItem('rinkl_ai_chats', JSON.stringify(chats));
+            }, [chats]);
+
+            const generateContentWithRetry = async (history, config) => {
+                let lastError = null;
+                for (const apiKey of API_KEYS) {
+                    try {
+                        const ai = new GoogleGenAI({ apiKey });
+                        const response = await ai.models.generateContent({
+                            model: 'gemini-2.5-flash',
+                            contents: history,
+                            config: config
+                        });
+                        return response;
+                    } catch (e) {
+                        console.warn(`API key failed, trying next...`);
+                        lastError = e;
+                    }
+                }
+                throw lastError;
+            };
+
+            const handleSendMessage = async () => {
+                if ((!inputText.trim() && mediaList.length === 0) || isTyping) return;
+                const newMessage = {
+                    id: Date.now().toString(),
+                    text: inputText.trim(),
+                    sender: 'user',
+                    timestamp: new Date().toISOString(),
+                    media: [...mediaList]
+                };
+                const updatedChats = { ...chats };
+                if (!updatedChats[currentChatId]) updatedChats[currentChatId] = [];
+                updatedChats[currentChatId].push(newMessage);
+                setChats(updatedChats);
+                setInputText('');
+                setMediaList([]);
+                if (textareaRef.current) textareaRef.current.style.height = 'auto';
+                setIsTyping(true);
+                try {
+                    const history = updatedChats[currentChatId].map(msg => ({
+                        role: msg.sender === 'user' ? 'user' : 'model',
+                        parts: msg.media && msg.media.length > 0 ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
+                    }));
+                    
+                    const response = await generateContentWithRetry(history, { temperature: 0.7, maxOutputTokens: 1000 });
+                    
+                    const aiText = response.text || t('noResponse');
+                    setChats(prev => ({
+                        ...prev,
+                        [currentChatId]: [...prev[currentChatId], { id: (Date.now() + 1).toString(), text: aiText, sender: 'ai', timestamp: new Date().toISOString() }]
+                    }));
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    setChats(prev => ({
+                        ...prev,
+                        [currentChatId]: [...prev[currentChatId], { id: (Date.now() + 1).toString(), text: t('errorNetwork'), sender: 'ai', isError: true, timestamp: new Date().toISOString() }]
+                    }));
+                } finally { setIsTyping(false); }
+            };
+
+            const handleFileSelect = (e) => {
+                if (e.target.files) {
+                    Array.from(e.target.files).forEach(file => {
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            setMediaList(prev => [...prev, { name: file.name, type: file.type, size: file.size, data: ev.target.result, url: URL.createObjectURL(file) }]);
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            };
+
+            const createNewChat = () => {
+                const newId = 'chat_' + Date.now();
+                setChats(prev => ({ ...prev, [newId]: [] }));
+                setCurrentChatId(newId);
+                setIsSidebarOpen(false);
+            };
+
+            const deleteChat = (e, id) => {
+                e.stopPropagation();
+                if (Object.keys(chats).length <= 1) return;
+                if (window.confirm(t('deleteChat'))) {
+                    const newChats = { ...chats };
+                    delete newChats[id];
+                    setChats(newChats);
+                    if (currentChatId === id) setCurrentChatId(Object.keys(newChats)[0]);
+                }
+            };
+
+            const handleCopy = (text) => navigator.clipboard.writeText(text);
+
+            const openEditModal = (msg) => {
+                setEditingMessageId(msg.id);
+                setEditText(msg.text);
+            };
+
+            const saveEditedMessage = async () => {
+                if (!editingMessageId) return;
+                const chat = [...chats[currentChatId]];
+                const index = chat.findIndex(m => m.id === editingMessageId);
+                if (index !== -1) {
+                    chat[index].text = editText;
+                    const newHistory = chat.slice(0, index + 1);
+                    setChats(prev => ({ ...prev, [currentChatId]: newHistory }));
+                    setEditingMessageId(null);
+                    setIsTyping(true);
+                    try {
+                        const history = newHistory.map(msg => ({
+                            role: msg.sender === 'user' ? 'user' : 'model',
+                            parts: msg.media && msg.media.length > 0 ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
+                        }));
+                        const response = await generateContentWithRetry(history, { temperature: 0.7, maxOutputTokens: 1000 });
+                        const aiText = response.text || t('noResponse');
+                        setChats(prev => ({ ...prev, [currentChatId]: [...prev[currentChatId], { id: Date.now().toString(), text: aiText, sender: 'ai', timestamp: new Date().toISOString() }] }));
+                    } catch (e) { console.error(e); } finally { setIsTyping(false); }
+                }
+            };
+            
+            const handleClearData = () => {
+                const auth = localStorage.getItem('rinkl_auth_completed');
+                const userId = localStorage.getItem('userId');
+                localStorage.clear();
+                if (auth) localStorage.setItem('rinkl_auth_completed', auth);
+                if (userId) localStorage.setItem('userId', userId);
+                window.location.reload();
+            };
+
+            const renderContent = (text) => {
+                const parts = text.split(/(```[\s\S]*?```|`[^`]+`|\*\*[^*]+\*\*)/g);
+                return parts.map((part, i) => {
+                    if (part.startsWith('```')) return <pre key={i} className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto my-2 text-sm font-mono whitespace-pre-wrap">{part.replace(/```/g, '')}</pre>;
+                    if (part.startsWith('`')) return <code key={i} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-sm font-mono">{part.replace(/`/g, '')}</code>;
+                    if (part.startsWith('**')) return <strong key={i}>{part.replace(/\*\*/g, '')}</strong>;
+                    return <span key={i} className="whitespace-pre-wrap">{part}</span>;
+                });
+            };
+
+            return (
+                <div className="flex h-full flex-col bg-[#f5f7fa] dark:bg-gray-900 transition-colors duration-300">
+                    <header className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 shadow-sm relative z-20">
+                        <button onClick={() => setIsSidebarOpen(true)} className="absolute left-4 p-2 text-gray-600 dark:text-gray-300">
+                            <div className="w-6 h-0.5 bg-current mb-1.5"></div>
+                            <div className="w-6 h-0.5 bg-current mb-1.5"></div>
+                            <div className="w-6 h-0.5 bg-current"></div>
+                        </button>
+                        <div className={`px-5 py-2 rounded-full border-2 font-semibold text-sm transition-colors duration-300 ${connectionStatus === 'connected' ? 'border-green-500 text-green-700 dark:text-green-400' : 'border-red-500 text-red-600'}`}>
+                            Rinkl AI
+                        </div>
+                    </header>
+                    {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30" onClick={() => setIsSidebarOpen(false)} />}
+                    <aside className={`fixed top-0 left-0 h-full w-[300px] bg-white dark:bg-gray-800 shadow-xl z-40 transform transition-transform duration-300 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="p-5 border-b border-gray-100 dark:border-gray-700 space-y-3">
+                            <button onClick={createNewChat} className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 font-medium transition-colors">
+                                <span>+</span> {t('newChat')}
+                            </button>
+                            <button onClick={() => setIsSettingsOpen(true)} className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl flex items-center justify-center gap-2 font-medium transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                                {t('settings')}
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                            {Object.keys(chats).map(id => (
+                                <div key={id} onClick={() => { setCurrentChatId(id); setIsSidebarOpen(false); }} className={`p-3 rounded-xl cursor-pointer group relative border transition-all ${currentChatId === id ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                                    <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">{t('chat')} {id.split('_')[1] || '1'}</div>
+                                    <div className="text-xs text-gray-500 truncate mt-1">{chats[id][chats[id].length -1]?.text.substring(0, 30) || t('newConversation')}</div>
+                                    <button onClick={(e) => deleteChat(e, id)} className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs">Del</button>
+                                </div>
+                            ))}
+                        </div>
+                    </aside>
+                    <main className="flex-1 overflow-hidden flex flex-col relative max-w-4xl mx-auto w-full">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                            {chats[currentChatId]?.map((msg, index) => (
+                                <div key={index} className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
+                                    <div className={`p-4 shadow-sm relative text-base leading-relaxed mb-1 ${msg.sender === 'user' ? 'bg-[#2c3e50] text-white rounded-t-2xl rounded-bl-2xl' : 'bg-[#f1f3f4] text-gray-800 dark:bg-gray-700 dark:text-gray-100 rounded-t-2xl rounded-br-2xl'}`}>
+                                        {msg.media && msg.media.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 mb-3">
+                                                {msg.media.map((m, i) => <img key={i} src={m.url} alt="attachment" className="w-24 h-24 object-cover rounded-lg border border-white/20" />)}
+                                            </div>
+                                        )}
+                                        {renderContent(msg.text)}
+                                    </div>
+                                    <div className="flex gap-2 self-start px-1">
+                                        <button onClick={() => handleCopy(msg.text)} title={t('copy')} className="opacity-50 hover:opacity-100 transition-opacity p-1 text-gray-500 dark:text-gray-400">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        </button>
+                                        {msg.sender === 'user' && (
+                                            <button onClick={() => openEditModal(msg)} title={t('edit')} className="opacity-50 hover:opacity-100 transition-opacity p-1 text-gray-500 dark:text-gray-400">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                            {isTyping && (
+                                <div className="flex items-start">
+                                    <div className="bg-[#f1f3f4] dark:bg-gray-700 p-4 rounded-t-2xl rounded-br-2xl">
+                                        <div className="typing-dots flex space-x-1">
+                                            <span className="w-2 h-2 bg-gray-400 rounded-full"></span><span className="w-2 h-2 bg-gray-400 rounded-full"></span><span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        <div className="p-4 bg-transparent">
+                            {mediaList.length > 0 && (
+                                <div className="flex gap-2 mb-2 p-2 bg-white dark:bg-gray-800 rounded-xl overflow-x-auto shadow-sm">
+                                    {mediaList.map((m, i) => (
+                                        <div key={i} className="relative flex-shrink-0">
+                                            <img src={m.url} alt="preview" className="w-16 h-16 object-cover rounded-lg" />
+                                            <button onClick={() => setMediaList(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            <div className="flex items-end bg-white dark:bg-gray-800 rounded-[28px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-gray-100 dark:border-gray-700 p-2">
+                                <div className="flex items-center justify-center pb-1 pl-1">
+                                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} multiple accept="image/*" className="hidden" />
+                                    <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors" title="Attach">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    </button>
+                                </div>
+                                <textarea ref={textareaRef} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t('typeMessage')} className="flex-1 max-h-32 min-h-[44px] py-2.5 px-4 bg-transparent border-none outline-none resize-none text-gray-700 dark:text-gray-200" rows={1} />
+                                <button onClick={handleSendMessage} disabled={(!inputText && mediaList.length === 0) || isTyping} className={`w-11 h-11 rounded-full flex items-center justify-center transition-all mb-0.5 mr-0.5 ${(!inputText && mediaList.length === 0) || isTyping ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md'}`}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+                    {editingMessageId && (
+                        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+                                <h3 className="text-lg font-bold mb-4 dark:text-white">{t('editMessage')}</h3>
+                                <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full h-32 p-3 border border-gray-200 dark:border-gray-700 rounded-xl resize-none mb-6 outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" />
+                                <div className="flex justify-end gap-3">
+                                    <button onClick={() => setEditingMessageId(null)} className="px-5 py-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">{t('cancel')}</button>
+                                    <button onClick={saveEditedMessage} className="px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all">{t('saveRegenerate')}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <SettingsModal 
+                        isOpen={isSettingsOpen} 
+                        onClose={() => setIsSettingsOpen(false)} 
+                        settings={settings} 
+                        onUpdateSettings={onUpdateSettings} 
+                        onClearData={handleClearData}
+                        onOpenFeedback={onNavigateFeedback}
+                    />
+                </div>
+            );
+        };
+
+        // App
+        const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [isLoading, setIsLoading] = useState(true);
+            const [settings, setSettings] = useState({ theme: 'auto', language: 'ru' });
+            const [view, setView] = useState('chat'); // chat, feedback
+
+            useEffect(() => {
+                const authStatus = localStorage.getItem('rinkl_auth_completed');
+                if (authStatus === 'true') setIsAuthenticated(true);
+                const savedSettings = localStorage.getItem('rinkl_settings');
+                if (savedSettings) { try { setSettings(JSON.parse(savedSettings)); } catch (e) { } }
+                setIsLoading(false);
+            }, []);
+
+            useEffect(() => {
+                const applyTheme = () => {
+                    const root = window.document.documentElement;
+                    const isDark = settings.theme === 'dark' || (settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
+                };
+                applyTheme();
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                const handler = () => { if (settings.theme === 'auto') applyTheme(); };
+                mediaQuery.addEventListener('change', handler);
+                return () => mediaQuery.removeEventListener('change', handler);
+            }, [settings.theme]);
+
+            const handleAuthSuccess = () => {
+                localStorage.setItem('rinkl_auth_completed', 'true');
+                setIsAuthenticated(true);
+            };
+
+            const updateSettings = (newSettings) => {
+                const updated = { ...settings, ...newSettings };
+                setSettings(updated);
+                localStorage.setItem('rinkl_settings', JSON.stringify(updated));
+            };
+
+            if (isLoading) return null;
+            
+            if (!isAuthenticated) return <InvitationScreen onEnter={handleAuthSuccess} />;
+
+            if (view === 'feedback') return <FeedbackScreen onBack={() => setView('chat')} />;
+            
+            return <ChatScreen settings={settings} onUpdateSettings={updateSettings} onNavigateFeedback={() => setView('feedback')} />;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
