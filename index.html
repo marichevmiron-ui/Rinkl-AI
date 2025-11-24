@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Rinkl AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -228,8 +228,8 @@
 }
 </script>
 </head>
-<body class="bg-[#f5f7fa] text-[#333] overflow-hidden">
-    <div id="root"></div>
+<body class="bg-[#f5f7fa] text-[#333] overflow-hidden fixed inset-0">
+    <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel" data-type="module" data-presets="react,typescript">
         import { GoogleGenAI } from "@google/genai";
@@ -423,7 +423,6 @@
                     database.current = getDatabase(firebaseApp.current);
                 } catch (e) {
                     // console.error("Firebase init error (likely already initialized)", e);
-                    // If already init, just get the existing one if possible or ignore
                 }
                 
                 if (inputRefs.current[0]) inputRefs.current[0].focus();
@@ -460,9 +459,6 @@
                 setIsValidating(true);
                 const code = inputs.join('');
                 try {
-                    // Reuse global firebase or init local if needed. Since we are in module, re-init might throw.
-                    // Better to rely on what we have. 
-                    // To be safe, re-declare config locally for this scope if not using global app.
                     const firebaseConfig = {
                         apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
                         authDomain: "talker-7e14c.firebaseapp.com",
@@ -473,7 +469,7 @@
                         appId: "1:615957572269:web:6b082400bbdd3a69d23424",
                         measurementId: "G-KEDM752JXL"
                     };
-                    const app = initializeApp(firebaseConfig, "invitationApp"); // Use named app to avoid conflict
+                    const app = initializeApp(firebaseConfig, "invitationApp"); 
                     const db = getDatabase(app);
 
                     const codeRef = ref(db, 'inviteCodes/' + code);
@@ -509,7 +505,7 @@
             const isComplete = inputs.every(char => char.length > 0);
 
             return (
-                <div className="flex flex-col items-center justify-between min-h-screen p-5 bg-[#f5f5f5]">
+                <div className="flex flex-col items-center justify-between min-h-screen p-5 bg-[#f5f5f5] overflow-y-auto">
                     <div className="text-center mt-10">
                         <div className="text-[#0066cc] text-5xl font-bold relative inline-block mb-1">Rinkl</div>
                         <span className="text-black text-base block -mt-1">beta</span>
@@ -582,17 +578,10 @@
                     measurementId: "G-KEDM752JXL"
                 };
                 
-                // Initialize dedicated app for feedback to avoid conflicts
                 let app;
                 try {
                      app = initializeApp(firebaseConfig, 'feedbackApp');
                 } catch(e) {
-                     // If already exists
-                     // eslint-disable-next-line no-undef
-                     // We can't access `firebase.apps` directly here easily without global firebase object, 
-                     // so just try-catch. If it fails, we might rely on re-initialization logic or existing instance.
-                     // But strictly speaking, the SDK handles idempotency if name is same.
-                     // A safer way is using random name or ensuring singleton.
                      app = initializeApp(firebaseConfig, 'feedbackApp_' + Math.random());
                 }
                 const database = getDatabase(app);
@@ -810,7 +799,7 @@
                             </button>
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
-                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.32</p>
+                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.35</p>
                         </div>
                     </div>
                 </div>
@@ -859,8 +848,8 @@
                 if (Object.keys(chats).length > 0) localStorage.setItem('rinkl_ai_chats', JSON.stringify(chats));
             }, [chats]);
 
-            const generateContentWithRetry = async (history, config) => {
-                let lastError = null;
+            const generateContent = async (history, config) => {
+                // Try each API Key
                 for (const apiKey of API_KEYS) {
                     try {
                         const ai = new GoogleGenAI({ apiKey });
@@ -869,13 +858,13 @@
                             contents: history,
                             config: config
                         });
-                        return response;
+                        return { text: response.text };
                     } catch (e) {
-                        console.warn(`API key failed, trying next...`);
-                        lastError = e;
+                        console.warn(`Key failed: ...${apiKey.slice(-4)}`, e);
+                        // Continue to next key
                     }
                 }
-                throw lastError;
+                throw new Error("All API keys failed or network error.");
             };
 
             const handleSendMessage = async () => {
@@ -901,7 +890,7 @@
                         parts: msg.media && msg.media.length > 0 ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
                     }));
                     
-                    const response = await generateContentWithRetry(history, { temperature: 0.7, maxOutputTokens: 1000 });
+                    const response = await generateContent(history, { temperature: 0.7, maxOutputTokens: 1000 });
                     
                     const aiText = response.text || t('noResponse');
                     setChats(prev => ({
@@ -969,7 +958,7 @@
                             role: msg.sender === 'user' ? 'user' : 'model',
                             parts: msg.media && msg.media.length > 0 ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
                         }));
-                        const response = await generateContentWithRetry(history, { temperature: 0.7, maxOutputTokens: 1000 });
+                        const response = await generateContent(history, { temperature: 0.7, maxOutputTokens: 1000 });
                         const aiText = response.text || t('noResponse');
                         setChats(prev => ({ ...prev, [currentChatId]: [...prev[currentChatId], { id: Date.now().toString(), text: aiText, sender: 'ai', timestamp: new Date().toISOString() }] }));
                     } catch (e) { console.error(e); } finally { setIsTyping(false); }
@@ -997,13 +986,13 @@
 
             return (
                 <div className="flex h-full flex-col bg-[#f5f7fa] dark:bg-gray-900 transition-colors duration-300">
-                    <header className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 shadow-sm relative z-20">
+                    <header className="flex-none flex items-center justify-center p-4 bg-white dark:bg-gray-800 shadow-sm relative z-20">
                         <button onClick={() => setIsSidebarOpen(true)} className="absolute left-4 p-2 text-gray-600 dark:text-gray-300">
                             <div className="w-6 h-0.5 bg-current mb-1.5"></div>
                             <div className="w-6 h-0.5 bg-current mb-1.5"></div>
                             <div className="w-6 h-0.5 bg-current"></div>
                         </button>
-                        <div className={`px-5 py-2 rounded-full border-2 font-semibold text-sm transition-colors duration-300 ${connectionStatus === 'connected' ? 'border-green-500 text-green-700 dark:text-green-400' : 'border-red-500 text-red-600'}`}>
+                        <div className={`px-5 py-2 rounded-full border-2 font-semibold text-sm transition-colors duration-300 border-green-500 text-green-700 dark:text-green-400`}>
                             Rinkl AI
                         </div>
                     </header>
@@ -1028,8 +1017,8 @@
                             ))}
                         </div>
                     </aside>
-                    <main className="flex-1 overflow-hidden flex flex-col relative max-w-4xl mx-auto w-full">
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                    <main className="flex-1 overflow-hidden flex flex-col relative max-w-4xl mx-auto w-full h-full min-h-0">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
                             {chats[currentChatId]?.map((msg, index) => (
                                 <div key={index} className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                                     <div className={`p-4 shadow-sm relative text-base leading-relaxed mb-1 ${msg.sender === 'user' ? 'bg-[#2c3e50] text-white rounded-t-2xl rounded-bl-2xl' : 'bg-[#f1f3f4] text-gray-800 dark:bg-gray-700 dark:text-gray-100 rounded-t-2xl rounded-br-2xl'}`}>
@@ -1063,7 +1052,7 @@
                             )}
                             <div ref={messagesEndRef} />
                         </div>
-                        <div className="p-4 bg-transparent">
+                        <div className="p-4 bg-transparent flex-none">
                             {mediaList.length > 0 && (
                                 <div className="flex gap-2 mb-2 p-2 bg-white dark:bg-gray-800 rounded-xl overflow-x-auto shadow-sm">
                                     {mediaList.map((m, i) => (
