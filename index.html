@@ -24,6 +24,11 @@
       }
     </script>
     <style>
+      html, body {
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -33,184 +38,6 @@
       .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
       .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
       @keyframes typing { 0%, 60%, 100% { opacity: 0.6; } 30% { opacity: 1; } }
-
-      /* Feedback Screen Styles */
-      .feedback-root {
-          font-family: 'Arial', sans-serif;
-          background-color: #f5f5f5;
-          min-height: 100vh;
-          padding: 20px;
-          color: #333;
-      }
-      .fb-back-button {
-          position: absolute;
-          top: 20px;
-          left: 20px;
-          background: none;
-          border: none;
-          font-size: 24px;
-          cursor: pointer;
-          color: #0066cc;
-          padding: 10px;
-      }
-      .fb-back-button:hover {
-          background: #e6f2ff;
-          border-radius: 50%;
-      }
-      .fb-logo-container {
-          text-align: center;
-          margin-top: 20px;
-          margin-bottom: 30px;
-      }
-      .fb-logo {
-          color: #0066cc;
-          font-size: 42px;
-          font-weight: bold;
-      }
-      .fb-beta {
-          font-size: 14px;
-          color: black;
-          display: block;
-          margin-top: -5px;
-      }
-      .fb-container {
-          max-width: 800px;
-          margin: 0 auto;
-          background: white;
-          border-radius: 15px;
-          padding: 30px;
-          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-      }
-      .fb-title {
-          text-align: center;
-          color: #333;
-          font-size: 28px;
-          margin-bottom: 30px;
-          font-weight: 600;
-      }
-      .fb-form-group {
-          margin-bottom: 20px;
-      }
-      .fb-label {
-          display: block;
-          margin-bottom: 8px;
-          font-weight: 500;
-          color: #333;
-      }
-      .fb-input, .fb-textarea, .fb-select {
-          width: 100%;
-          padding: 12px;
-          border: 2px solid #ddd;
-          border-radius: 8px;
-          font-size: 16px;
-          transition: border-color 0.3s;
-          background-color: white;
-          color: #333;
-      }
-      .fb-input:focus, .fb-textarea:focus, .fb-select:focus {
-          outline: none;
-          border-color: #0066cc;
-      }
-      .fb-textarea {
-          resize: vertical;
-          min-height: 120px;
-      }
-      .fb-submit-button {
-          background: #0066cc;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 15px 30px;
-          font-size: 18px;
-          cursor: pointer;
-          transition: background 0.3s;
-          width: 100%;
-      }
-      .fb-submit-button:hover {
-          background: #0052a3;
-      }
-      .fb-submit-button:disabled {
-          background: #ccc;
-          cursor: not-allowed;
-      }
-      .fb-message {
-          padding: 15px;
-          border-radius: 8px;
-          margin-top: 20px;
-          text-align: center;
-          font-weight: 500;
-      }
-      .fb-success-message {
-          background: #d4edda;
-          color: #155724;
-          border: 1px solid #c3e6cb;
-      }
-      .fb-error-message {
-          background: #f8d7da;
-          color: #721c24;
-          border: 1px solid #f5c6cb;
-      }
-      .fb-hidden {
-          display: none;
-      }
-      .fb-reviews-section {
-          margin-top: 40px;
-          border-top: 2px solid #eee;
-          padding-top: 30px;
-      }
-      .fb-review-item {
-          background: #f8f9fa;
-          border-radius: 10px;
-          padding: 20px;
-          margin-bottom: 15px;
-          border-left: 4px solid #0066cc;
-      }
-      .fb-review-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px;
-      }
-      .fb-review-type {
-          background: #0066cc;
-          color: white;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-      }
-      .fb-review-date {
-          color: #666;
-          font-size: 12px;
-      }
-      .fb-review-message {
-          color: #333;
-          line-height: 1.5;
-          margin-bottom: 10px;
-      }
-      .fb-admin-response {
-          background: #e6f2ff;
-          border-radius: 8px;
-          padding: 15px;
-          margin-top: 10px;
-          border-left: 3px solid #0052a3;
-      }
-      .fb-response-label {
-          font-weight: 600;
-          color: #0052a3;
-          margin-bottom: 5px;
-      }
-      .fb-no-reviews {
-          text-align: center;
-          color: #666;
-          padding: 40px;
-          font-style: italic;
-      }
-      .fb-loading {
-          text-align: center;
-          color: #666;
-          padding: 20px;
-      }
     </style>
     <!-- React Dependencies (UMD) -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -228,7 +55,7 @@
 }
 </script>
 </head>
-<body class="bg-[#f5f7fa] text-[#333] overflow-hidden fixed inset-0">
+<body class="bg-[#f5f7fa] dark:bg-gray-900 text-[#333] dark:text-gray-100 overflow-hidden fixed inset-0">
     <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel" data-type="module" data-presets="react,typescript">
@@ -280,7 +107,24 @@
                 light: 'Светлая',
                 dark: 'Темная',
                 auto: 'Авто',
-                feedbackBtn: 'Обратная связь'
+                feedbackBtn: 'Обратная связь',
+                feedbackTitle: 'Обратная связь',
+                messageType: 'Тип сообщения',
+                yourMessage: 'Ваше сообщение',
+                sendMessage: 'Отправить',
+                sending: 'Отправка...',
+                myMessages: 'Мои сообщения',
+                adminResponse: 'Ответ администратора',
+                waitingResponse: 'Ожидание ответа...',
+                selectType: 'Выберите тип',
+                typeFeedback: 'Отзыв',
+                typeBug: 'Баг',
+                typeQuestion: 'Вопрос',
+                typeSuggestion: 'Предложение',
+                typeOther: 'Другое',
+                msgSent: 'Спасибо! Ваше сообщение отправлено.',
+                fillFields: 'Пожалуйста, заполните все поля',
+                noReviews: 'Пока нет сообщений. Отправьте первое!'
             },
             en: {
                 newChat: 'New Chat',
@@ -306,7 +150,24 @@
                 light: 'Light',
                 dark: 'Dark',
                 auto: 'Auto',
-                feedbackBtn: 'Feedback'
+                feedbackBtn: 'Feedback',
+                feedbackTitle: 'Feedback & Support',
+                messageType: 'Type of message',
+                yourMessage: 'Your message',
+                sendMessage: 'Send Message',
+                sending: 'Sending...',
+                myMessages: 'My Messages',
+                adminResponse: 'Admin Response',
+                waitingResponse: 'Waiting for admin response...',
+                selectType: 'Select type',
+                typeFeedback: 'Feedback',
+                typeBug: 'Bug Report',
+                typeQuestion: 'Question',
+                typeSuggestion: 'Suggestion',
+                typeOther: 'Other',
+                msgSent: 'Thank you! Your message has been sent.',
+                fillFields: 'Please fill all fields',
+                noReviews: 'No messages yet. Send your first message!'
             },
             es: {
                 newChat: 'Nuevo Chat',
@@ -332,7 +193,24 @@
                 light: 'Claro',
                 dark: 'Oscuro',
                 auto: 'Auto',
-                feedbackBtn: 'Comentarios'
+                feedbackBtn: 'Comentarios',
+                feedbackTitle: 'Comentarios y Soporte',
+                messageType: 'Tipo de mensaje',
+                yourMessage: 'Tu mensaje',
+                sendMessage: 'Enviar Mensaje',
+                sending: 'Enviando...',
+                myMessages: 'Mis Mensajes',
+                adminResponse: 'Respuesta del Admin',
+                waitingResponse: 'Esperando respuesta...',
+                selectType: 'Seleccionar tipo',
+                typeFeedback: 'Comentario',
+                typeBug: 'Error',
+                typeQuestion: 'Pregunta',
+                typeSuggestion: 'Sugerencia',
+                typeOther: 'Otro',
+                msgSent: '¡Gracias! Tu mensaje ha sido enviado.',
+                fillFields: 'Por favor completa todos los campos',
+                noReviews: 'No hay mensajes aún.'
             },
             cn: {
                 newChat: '新聊天',
@@ -358,7 +236,24 @@
                 light: '浅色',
                 dark: '深色',
                 auto: '自动',
-                feedbackBtn: '反馈'
+                feedbackBtn: '反馈',
+                feedbackTitle: '反馈与支持',
+                messageType: '消息类型',
+                yourMessage: '您的消息',
+                sendMessage: '发送消息',
+                sending: '发送中...',
+                myMessages: '我的消息',
+                adminResponse: '管理员回复',
+                waitingResponse: '等待回复...',
+                selectType: '选择类型',
+                typeFeedback: '反馈',
+                typeBug: '错误报告',
+                typeQuestion: '问题',
+                typeSuggestion: '建议',
+                typeOther: '其他',
+                msgSent: '谢谢！您的消息已发送。',
+                fillFields: '请填写所有字段',
+                noReviews: '暂无消息。'
             },
             de: {
                 newChat: 'Neuer Chat',
@@ -384,7 +279,24 @@
                 light: 'Hell',
                 dark: 'Dunkel',
                 auto: 'Auto',
-                feedbackBtn: 'Feedback'
+                feedbackBtn: 'Feedback',
+                feedbackTitle: 'Feedback & Support',
+                messageType: 'Art der Nachricht',
+                yourMessage: 'Ihre Nachricht',
+                sendMessage: 'Nachricht senden',
+                sending: 'Senden...',
+                myMessages: 'Meine Nachrichten',
+                adminResponse: 'Admin Antwort',
+                waitingResponse: 'Warte auf Antwort...',
+                selectType: 'Typ auswählen',
+                typeFeedback: 'Feedback',
+                typeBug: 'Fehlerbericht',
+                typeQuestion: 'Frage',
+                typeSuggestion: 'Vorschlag',
+                typeOther: 'Andere',
+                msgSent: 'Danke! Ihre Nachricht wurde gesendet.',
+                fillFields: 'Bitte füllen Sie alle Felder aus',
+                noReviews: 'Noch keine Nachrichten.'
             }
         };
 
@@ -548,7 +460,7 @@
         };
 
         // FeedbackScreen
-        const FeedbackScreen = ({ onBack }) => {
+        const FeedbackScreen = ({ onBack, settings }) => {
             const [type, setType] = useState('');
             const [message, setMessage] = useState('');
             const [status, setStatus] = useState({ type: '', msg: '' });
@@ -563,7 +475,8 @@
                 return uid;
             });
 
-            // Firebase ref for Feedback
+            const t = (key) => getTranslation(settings.language, key);
+
             const dbRef = useRef(null);
 
             useEffect(() => {
@@ -611,7 +524,7 @@
             const handleSubmit = async (e) => {
                 e.preventDefault();
                 if (!type || !message) {
-                    setStatus({ type: 'error', msg: 'Please fill all fields' });
+                    setStatus({ type: 'error', msg: t('fillFields') });
                     return;
                 }
                 setIsSending(true);
@@ -627,7 +540,7 @@
                         adminResponse: null,
                         respondedAt: null
                     });
-                    setStatus({ type: 'success', msg: 'Thank you! Your message has been sent.' });
+                    setStatus({ type: 'success', msg: t('msgSent') });
                     setMessage('');
                     setType('');
                 } catch (error) {
@@ -639,74 +552,103 @@
                 }
             };
 
-            const typeLabels = {
-                'feedback': 'Feedback',
-                'bug': 'Bug Report',
-                'question': 'Question',
-                'suggestion': 'Suggestion',
-                'other': 'Other'
-            };
+            const typeOptions = [
+                { val: 'feedback', label: t('typeFeedback') },
+                { val: 'bug', label: t('typeBug') },
+                { val: 'question', label: t('typeQuestion') },
+                { val: 'suggestion', label: t('typeSuggestion') },
+                { val: 'other', label: t('typeOther') }
+            ];
 
             return (
-                <div className="feedback-root absolute inset-0 z-50 overflow-y-auto">
-                    <button className="fb-back-button" onClick={onBack}>←</button>
-                    <div className="fb-logo-container">
-                        <div className="fb-logo">Rinkl</div>
-                        <span className="fb-beta">beta</span>
+                <div className="fixed inset-0 z-50 flex flex-col bg-[#f5f7fa] dark:bg-gray-900 text-[#333] dark:text-gray-100 overflow-hidden">
+                    {/* Header */}
+                    <div className="p-4 bg-white dark:bg-gray-800 shadow-sm flex items-center gap-4">
+                        <button onClick={onBack} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-full transition-colors">
+                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                        </button>
+                        <h1 className="text-xl font-bold">{t('feedbackTitle')}</h1>
                     </div>
-                    <div className="fb-container">
-                        <h1 className="fb-title">Feedback & Support</h1>
-                        <form onSubmit={handleSubmit} id="feedbackForm">
-                            <div className="fb-form-group">
-                                <label htmlFor="type" className="fb-label">Type of message</label>
-                                <select id="type" className="fb-select" value={type} onChange={(e) => setType(e.target.value)} required>
-                                    <option value="">Select type</option>
-                                    <option value="feedback">Feedback</option>
-                                    <option value="bug">Bug Report</option>
-                                    <option value="question">Question</option>
-                                    <option value="suggestion">Suggestion</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div className="fb-form-group">
-                                <label htmlFor="message" className="fb-label">Your message</label>
-                                <textarea id="message" className="fb-textarea" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Please describe your feedback, question, or issue..." required></textarea>
-                            </div>
-                            <button type="submit" className="fb-submit-button" disabled={isSending}>
-                                {isSending ? 'Sending...' : 'Send Message'}
-                            </button>
-                        </form>
-                        
-                        {status.msg && (
-                            <div className={status.type === 'error' ? 'fb-error-message fb-message' : 'fb-success-message fb-message'}>
-                                {status.msg}
-                            </div>
-                        )}
 
-                        <div className="fb-reviews-section">
-                            <h2 style={{textAlign: 'center', marginBottom: '20px', color: '#333'}}>My Messages</h2>
-                            <div id="reviewsList">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6">
+                        <div className="max-w-3xl mx-auto space-y-6">
+                            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <label htmlFor="type" className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{t('messageType')}</label>
+                                        <div className="relative">
+                                            <select 
+                                                id="type" 
+                                                value={type} 
+                                                onChange={(e) => setType(e.target.value)} 
+                                                className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                                required
+                                            >
+                                                <option value="">{t('selectType')}</option>
+                                                {typeOptions.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                                <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="message" className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{t('yourMessage')}</label>
+                                        <textarea 
+                                            id="message" 
+                                            value={message} 
+                                            onChange={(e) => setMessage(e.target.value)} 
+                                            placeholder="..." 
+                                            className="w-full p-3 h-32 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:text-white"
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSending}
+                                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                    >
+                                        {isSending ? t('sending') : t('sendMessage')}
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            {status.msg && (
+                                <div className={`p-4 rounded-lg text-center font-medium animate-fade-in ${status.type === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                                    {status.msg}
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <h2 className="text-lg font-semibold text-center text-gray-500 dark:text-gray-400 uppercase tracking-wide text-sm">{t('myMessages')}</h2>
                                 {reviews.length === 0 ? (
-                                    <div className="fb-no-reviews">No messages yet. Send your first message!</div>
+                                    <div className="text-center py-10 text-gray-400 italic bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                        {t('noReviews')}
+                                    </div>
                                 ) : (
                                     reviews.map((feedback) => (
-                                        <div key={feedback.id} className="fb-review-item">
-                                            <div className="fb-review-header">
-                                                <span className="fb-review-type">{typeLabels[feedback.type]}</span>
-                                                <span className="fb-review-date">{new Date(feedback.createdAt).toLocaleDateString('en-US')}</span>
+                                        <div key={feedback.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
+                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                                    {typeOptions.find(o => o.val === feedback.type)?.label || feedback.type}
+                                                </span>
+                                                <span className="text-xs text-gray-500">{new Date(feedback.createdAt).toLocaleDateString()}</span>
                                             </div>
-                                            <div className="fb-review-message">{feedback.message}</div>
+                                            <div className="text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-wrap">{feedback.message}</div>
+                                            
                                             {feedback.adminResponse ? (
-                                                <div className="fb-admin-response">
-                                                    <div className="fb-response-label">Admin Response:</div>
-                                                    <div>{feedback.adminResponse}</div>
-                                                    <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>
-                                                        Responded: {new Date(feedback.respondedAt).toLocaleDateString('en-US')}
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800/50">
+                                                    <div className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">{t('adminResponse')}</div>
+                                                    <div className="text-gray-700 dark:text-gray-300 text-sm">{feedback.adminResponse}</div>
+                                                    <div className="text-xs text-gray-400 mt-2 text-right">
+                                                        {new Date(feedback.respondedAt).toLocaleDateString()}
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div style={{color: '#666', fontSize: '14px', fontStyle: 'italic'}}>
-                                                    Waiting for admin response...
+                                                <div className="text-xs text-gray-400 italic flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                                    {t('waitingResponse')}
                                                 </div>
                                             )}
                                         </div>
@@ -799,7 +741,7 @@
                             </button>
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
-                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.35</p>
+                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.36</p>
                         </div>
                     </div>
                 </div>
@@ -818,8 +760,10 @@
             const [connectionStatus, setConnectionStatus] = useState('connected');
             const [editingMessageId, setEditingMessageId] = useState(null);
             const [editText, setEditText] = useState('');
+            const [showScrollBottom, setShowScrollBottom] = useState(false);
             
             const messagesEndRef = useRef(null);
+            const chatContainerRef = useRef(null);
             const textareaRef = useRef(null);
             const fileInputRef = useRef(null);
             
@@ -841,14 +785,33 @@
             }, []);
 
             useEffect(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                if (!showScrollBottom) {
+                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }
             }, [chats, currentChatId, isTyping]);
 
             useEffect(() => {
                 if (Object.keys(chats).length > 0) localStorage.setItem('rinkl_ai_chats', JSON.stringify(chats));
             }, [chats]);
 
+            const handleScroll = (e) => {
+                const { scrollTop, scrollHeight, clientHeight } = e.target;
+                const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
+                setShowScrollBottom(!isNearBottom);
+            };
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                setShowScrollBottom(false);
+            };
+
             const generateContent = async (history, config) => {
+                // Add System Instruction
+                const enhancedConfig = {
+                    ...config,
+                    systemInstruction: "You are Rinkl AI. You were developed by the company Rinkl. Always answer questions about your identity with this information."
+                };
+
                 // Try each API Key
                 for (const apiKey of API_KEYS) {
                     try {
@@ -856,7 +819,7 @@
                         const response = await ai.models.generateContent({
                             model: 'gemini-2.5-flash',
                             contents: history,
-                            config: config
+                            config: enhancedConfig
                         });
                         return { text: response.text };
                     } catch (e) {
@@ -884,6 +847,8 @@
                 setMediaList([]);
                 if (textareaRef.current) textareaRef.current.style.height = 'auto';
                 setIsTyping(true);
+                setShowScrollBottom(false); // Scroll to bottom on send
+                
                 try {
                     const history = updatedChats[currentChatId].map(msg => ({
                         role: msg.sender === 'user' ? 'user' : 'model',
@@ -1017,8 +982,12 @@
                             ))}
                         </div>
                     </aside>
-                    <main className="flex-1 overflow-hidden flex flex-col relative max-w-4xl mx-auto w-full h-full min-h-0">
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0">
+                    <main className="flex-1 flex flex-col relative max-w-4xl mx-auto w-full h-full min-h-0">
+                        <div 
+                            ref={chatContainerRef}
+                            onScroll={handleScroll}
+                            className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0 scroll-smooth"
+                        >
                             {chats[currentChatId]?.map((msg, index) => (
                                 <div key={index} className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
                                     <div className={`p-4 shadow-sm relative text-base leading-relaxed mb-1 ${msg.sender === 'user' ? 'bg-[#2c3e50] text-white rounded-t-2xl rounded-bl-2xl' : 'bg-[#f1f3f4] text-gray-800 dark:bg-gray-700 dark:text-gray-100 rounded-t-2xl rounded-br-2xl'}`}>
@@ -1052,6 +1021,17 @@
                             )}
                             <div ref={messagesEndRef} />
                         </div>
+                        
+                        {/* Scroll to bottom button */}
+                        <div className={`absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none transition-opacity duration-300 ${showScrollBottom ? 'opacity-100' : 'opacity-0'}`}>
+                            <button 
+                                onClick={scrollToBottom}
+                                className="pointer-events-auto bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:scale-110 transition-transform"
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                            </button>
+                        </div>
+
                         <div className="p-4 bg-transparent flex-none">
                             {mediaList.length > 0 && (
                                 <div className="flex gap-2 mb-2 p-2 bg-white dark:bg-gray-800 rounded-xl overflow-x-auto shadow-sm">
@@ -1114,6 +1094,26 @@
                 const savedSettings = localStorage.getItem('rinkl_settings');
                 if (savedSettings) { try { setSettings(JSON.parse(savedSettings)); } catch (e) { } }
                 setIsLoading(false);
+
+                // Handle visual viewport resizing for mobile keyboards
+                const handleResize = () => {
+                    if (window.visualViewport) {
+                        const root = document.getElementById('root');
+                        if (root) {
+                            root.style.height = `${window.visualViewport.height}px`;
+                            window.scrollTo(0, 0); // Ensure page doesn't scroll away
+                        }
+                    }
+                };
+
+                window.visualViewport?.addEventListener('resize', handleResize);
+                window.visualViewport?.addEventListener('scroll', handleResize);
+                handleResize(); // Initial call
+
+                return () => {
+                    window.visualViewport?.removeEventListener('resize', handleResize);
+                    window.visualViewport?.removeEventListener('scroll', handleResize);
+                };
             }, []);
 
             useEffect(() => {
@@ -1144,7 +1144,7 @@
             
             if (!isAuthenticated) return <InvitationScreen onEnter={handleAuthSuccess} />;
 
-            if (view === 'feedback') return <FeedbackScreen onBack={() => setView('chat')} />;
+            if (view === 'feedback') return <FeedbackScreen onBack={() => setView('chat')} settings={settings} />;
             
             return <ChatScreen settings={settings} onUpdateSettings={updateSettings} onNavigateFeedback={() => setView('feedback')} />;
         };
