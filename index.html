@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
     <title>Rinkl AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -305,6 +305,60 @@
         };
 
         // --- COMPONENTS ---
+
+        // CodeBlock Component
+        const CodeBlock = ({ text }) => {
+            const [copied, setCopied] = useState(false);
+            
+            // Extract content and try to find language
+            const content = text.replace(/^```/, '').replace(/```$/, '');
+            let code = content;
+            let lang = 'code';
+            
+            // Simple language detection (first line)
+            const firstNewLine = content.indexOf('\n');
+            if (firstNewLine > -1) {
+                const firstLine = content.substring(0, firstNewLine).trim();
+                if (firstLine.length > 0 && firstLine.length < 20 && /^[a-zA-Z0-9+#]+$/.test(firstLine)) {
+                    lang = firstLine;
+                    code = content.substring(firstNewLine + 1);
+                }
+            }
+
+            const handleCopy = () => {
+                navigator.clipboard.writeText(code);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+                <div className="my-3 rounded-lg overflow-hidden bg-[#1e1e1e] border border-gray-700/50 shadow-md">
+                    <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-gray-700/50 select-none">
+                        <span className="text-xs text-gray-400 font-mono lowercase">{lang}</span>
+                        <button 
+                            onClick={handleCopy} 
+                            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors focus:outline-none"
+                            title="Copy Code"
+                        >
+                            {copied ? (
+                                <>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span className="text-green-400">Copied</span>
+                                </>
+                            ) : (
+                                <>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                    <div className="p-4 overflow-x-auto">
+                        <code className="text-sm font-mono text-gray-200 whitespace-pre">{code}</code>
+                    </div>
+                </div>
+            );
+        };
 
         // InvitationScreen
         const InvitationScreen = ({ onEnter }) => {
@@ -741,7 +795,7 @@
                             </button>
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
-                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.36</p>
+                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.37</p>
                         </div>
                     </div>
                 </div>
@@ -942,7 +996,9 @@
             const renderContent = (text) => {
                 const parts = text.split(/(```[\s\S]*?```|`[^`]+`|\*\*[^*]+\*\*)/g);
                 return parts.map((part, i) => {
-                    if (part.startsWith('```')) return <pre key={i} className="bg-gray-800 text-gray-100 p-3 rounded-md overflow-x-auto my-2 text-sm font-mono whitespace-pre-wrap">{part.replace(/```/g, '')}</pre>;
+                    if (part.startsWith('```')) {
+                        return <CodeBlock key={i} text={part} />;
+                    }
                     if (part.startsWith('`')) return <code key={i} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-sm font-mono">{part.replace(/`/g, '')}</code>;
                     if (part.startsWith('**')) return <strong key={i}>{part.replace(/\*\*/g, '')}</strong>;
                     return <span key={i} className="whitespace-pre-wrap">{part}</span>;
@@ -968,7 +1024,7 @@
                                 <span>+</span> {t('newChat')}
                             </button>
                             <button onClick={() => setIsSettingsOpen(true)} className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl flex items-center justify-center gap-2 font-medium transition-colors">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
                                 {t('settings')}
                             </button>
                         </div>
@@ -1094,26 +1150,6 @@
                 const savedSettings = localStorage.getItem('rinkl_settings');
                 if (savedSettings) { try { setSettings(JSON.parse(savedSettings)); } catch (e) { } }
                 setIsLoading(false);
-
-                // Handle visual viewport resizing for mobile keyboards
-                const handleResize = () => {
-                    if (window.visualViewport) {
-                        const root = document.getElementById('root');
-                        if (root) {
-                            root.style.height = `${window.visualViewport.height}px`;
-                            window.scrollTo(0, 0); // Ensure page doesn't scroll away
-                        }
-                    }
-                };
-
-                window.visualViewport?.addEventListener('resize', handleResize);
-                window.visualViewport?.addEventListener('scroll', handleResize);
-                handleResize(); // Initial call
-
-                return () => {
-                    window.visualViewport?.removeEventListener('resize', handleResize);
-                    window.visualViewport?.removeEventListener('scroll', handleResize);
-                };
             }, []);
 
             useEffect(() => {
