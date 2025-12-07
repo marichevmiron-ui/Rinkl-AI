@@ -422,8 +422,8 @@
             }, []);
 
             return (
-                <div className="fixed inset-0 z-50 flex flex-col h-full w-full bg-white overflow-hidden">
-                    {/* Top Half: Blue Gradient */}
+                <div className="fixed inset-0 z-50 flex flex-col h-full w-full bg-white dark:bg-gray-900 overflow-hidden transition-colors duration-300">
+                    {/* Top Half: Blue Gradient - Remains colorful to maintain brand identity even in dark mode */}
                     <div className="h-1/2 w-full bg-gradient-to-br from-[#5C9CE5] to-[#4A8BE0] flex flex-col items-center justify-center relative px-6 text-center shadow-lg">
                         <div className="text-6xl md:text-7xl font-bold text-black mb-8 select-none tracking-tight">
                             Rinkl AI
@@ -436,8 +436,8 @@
                         </div>
                     </div>
 
-                    {/* Bottom Half: White */}
-                    <div className="h-1/2 w-full bg-white flex flex-col items-center pt-16 px-10 relative">
+                    {/* Bottom Half: White/Dark */}
+                    <div className="h-1/2 w-full bg-white dark:bg-gray-900 flex flex-col items-center pt-16 px-10 relative transition-colors duration-300">
                         {/* Start Button */}
                         <button 
                             onClick={onStart}
@@ -450,12 +450,12 @@
                         <div className="mt-8 relative">
                             <button 
                                 onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                                className="flex items-center gap-2 text-gray-500 hover:text-[#4A8BE0] transition-colors group"
+                                className="flex items-center gap-2 text-gray-500 hover:text-[#4A8BE0] dark:text-gray-400 dark:hover:text-[#4A8BE0] transition-colors group"
                             >
                                 <span className="underline underline-offset-4 text-sm font-medium group-hover:no-underline">
                                     {SUPPORTED_LANGUAGES[settings.language]}
                                 </span>
-                                <div className="p-1 rounded-full bg-gray-100 group-hover:bg-blue-50 transition-colors">
+                                <div className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-gray-700 transition-colors">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -469,7 +469,7 @@
 
                             {/* Language Dropdown */}
                             {isLangMenuOpen && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in z-10 overflow-hidden">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 animate-fade-in z-10 overflow-hidden">
                                     {Object.keys(SUPPORTED_LANGUAGES).map(lang => (
                                         <button
                                             key={lang}
@@ -477,7 +477,7 @@
                                                 onUpdateSettings({ language: lang });
                                                 setIsLangMenuOpen(false);
                                             }}
-                                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center justify-between ${settings.language === lang ? 'text-[#4A8BE0] font-bold bg-blue-50' : 'text-gray-700'}`}
+                                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex items-center justify-between ${settings.language === lang ? 'text-[#4A8BE0] font-bold bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-200'}`}
                                         >
                                             {SUPPORTED_LANGUAGES[lang]}
                                             {settings.language === lang && <div className="w-1.5 h-1.5 rounded-full bg-[#4A8BE0]"></div>}
@@ -825,7 +825,7 @@
                             </button>
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 text-center">
-                            <p className="text-[10px] text-gray-400 font-mono tracking-wider">Rinkl AI v1.0.39</p>
+                            <p className="text-[10px] text-gray-400 font-mono tracking-wider">Rinkl AI v1.0.40</p>
                         </div>
                     </div>
                 </div>
