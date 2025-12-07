@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
     <title>Rinkl AI</title>
+    
+    <!-- Favicon / Site Icon (SVG Base64) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzFhNzNlOCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LXNpemU9IjI1NiIgZmlsbD0id2hpdGUiPlI8L3RleHQ+PC9zdmc+" />
+    
+    <!-- Browser Config for Windows Tiles -->
+    <meta name="msapplication-config" content="browserconfig.xml" />
+    <meta name="theme-color" content="#1a73e8">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -17,7 +30,22 @@
               'chat-ai': '#f1f3f4',
             },
             fontFamily: {
-              sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+              sans: ['Inter', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            animation: {
+                'fade-in': 'fadeIn 0.3s ease-out forwards',
+                'slide-up': 'slideUp 0.4s ease-out forwards',
+            },
+            keyframes: {
+                fadeIn: {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
+                },
+                slideUp: {
+                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                }
             }
           }
         }
@@ -28,16 +56,30 @@
         height: 100%;
         overflow: hidden;
         overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
       }
+      /* Custom Scrollbar */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
       ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      .dark ::-webkit-scrollbar-thumb { background: #475569; }
+      .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
       
       .typing-dots span { animation: typing 1.4s infinite; opacity: 0.6; }
       .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
       .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
       @keyframes typing { 0%, 60%, 100% { opacity: 0.6; } 30% { opacity: 1; } }
+
+      /* Glassmorphism Utilities */
+      .glass {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+      }
+      .dark .glass {
+          background: rgba(31, 41, 55, 0.85);
+      }
     </style>
     <!-- React Dependencies (UMD) -->
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -55,7 +97,7 @@
 }
 </script>
 </head>
-<body class="bg-[#f5f7fa] dark:bg-gray-900 text-[#333] dark:text-gray-100 overflow-hidden fixed inset-0">
+<body class="bg-[#f8fafc] dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden fixed inset-0 font-sans selection:bg-blue-200 dark:selection:bg-blue-900">
     <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel" data-type="module" data-presets="react,typescript">
@@ -63,7 +105,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, update, push, set, query, orderByChild, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
         
         const API_KEYS = [
             "AIzaSyAU-BK_uOte2K72RUhVW-dKTtCpaXUxVRM",
@@ -75,8 +117,8 @@
         // --- TYPES & CONSTANTS ---
         
         const SUPPORTED_LANGUAGES = {
-            ru: 'Русский',
             en: 'English',
+            ru: 'Русский',
             es: 'Español',
             cn: 'Chinese',
             de: 'Deutsch'
@@ -100,7 +142,11 @@
                 feedback: 'Обратная связь',
                 confirmClear: 'Вы уверены, что хотите удалить все сохраненные данные? Это действие нельзя отменить.',
                 deleteChat: 'Удалить этот чат?',
-                errorNetwork: 'Ошибка: Не удалось подключиться к сервису AI.',
+                errorNetwork: 'Ошибка подключения',
+                errorReadMore: 'Подробнее',
+                regionErrorTitle: 'Временная недоступность сервиса Rinkl AI в вашем регионе',
+                regionErrorText: 'К сожалению, в настоящее время доступ к Rinkl AI ограничен с территории следующих государств:\n\nАфганистан, Андорра, Беларусь, Ватикан, Иран, Куба, КНДР (Северная Корея), Лихтенштейн, Монако, Россия, Сан-Марино, Сирия.\n\nЕсли вы находитесь в одной из указанных стран, для продолжения работы с Rinkl AI рекомендуется использовать надёжный VPN-сервис и подключаться через сервер, расположенный в стране, где доступ не ограничен.\n\nЕсли вы находитесь за пределами перечисленных государств, но видите это сообщение, пожалуйста:\n• убедитесь, что у вас активно стабильное интернет-соединение;\n• отключите VPN/прокси (если они используются);\n• очистите кэш браузера и cookies;\n• попробуйте зайти с другого устройства или сети.\n\nПриносим извинения за доставленные неудобства. Мы работаем над расширением географии доступности сервиса.\n\nС уважением команда Rinkl',
+                close: 'Закрыть',
                 noResponse: 'Нет ответа.',
                 copy: 'Копировать',
                 edit: 'Изменить',
@@ -124,7 +170,11 @@
                 typeOther: 'Другое',
                 msgSent: 'Спасибо! Ваше сообщение отправлено.',
                 fillFields: 'Пожалуйста, заполните все поля',
-                noReviews: 'Пока нет сообщений. Отправьте первое!'
+                noReviews: 'Пока нет сообщений. Отправьте первое!',
+                slogan1: 'ИИ, который мыслит иначе',
+                slogan2: 'Думай меньше. Делай больше.',
+                slogan3: 'Где идеи становятся реальностью',
+                start: 'Начать'
             },
             en: {
                 newChat: 'New Chat',
@@ -143,7 +193,11 @@
                 feedback: 'Feedback',
                 confirmClear: 'Are you sure you want to delete all saved data? This cannot be undone.',
                 deleteChat: 'Delete this chat?',
-                errorNetwork: 'Error: Could not connect to AI service.',
+                errorNetwork: 'Connection error',
+                errorReadMore: 'Read more',
+                regionErrorTitle: 'Rinkl AI Service Temporarily Unavailable in Your Region',
+                regionErrorText: 'Unfortunately, access to Rinkl AI is currently restricted from the following territories:\n\nAfghanistan, Andorra, Belarus, Vatican City, Iran, Cuba, North Korea, Liechtenstein, Monaco, Russia, San Marino, Syria.\n\nIf you are located in one of these countries, it is recommended to use a reliable VPN service and connect via a server located in a country where access is not restricted to continue using Rinkl AI.\n\nIf you are outside these territories but see this message, please:\n• Ensure you have a stable internet connection;\n• Disable VPN/proxies (if used);\n• Clear browser cache and cookies;\n• Try accessing from another device or network.\n\nWe apologize for the inconvenience. We are working on expanding the service availability geography.\n\nBest regards, Rinkl Team',
+                close: 'Close',
                 noResponse: 'No response.',
                 copy: 'Copy',
                 edit: 'Edit',
@@ -167,7 +221,11 @@
                 typeOther: 'Other',
                 msgSent: 'Thank you! Your message has been sent.',
                 fillFields: 'Please fill all fields',
-                noReviews: 'No messages yet. Send your first message!'
+                noReviews: 'No messages yet. Send your first message!',
+                slogan1: 'AI that thinks differently',
+                slogan2: 'Think less. Do more.',
+                slogan3: 'Where ideas become reality',
+                start: 'Start'
             },
             es: {
                 newChat: 'Nuevo Chat',
@@ -186,7 +244,11 @@
                 feedback: 'Comentarios',
                 confirmClear: '¿Estás seguro de que quieres borrar todos los datos guardados? Esto no se puede deshacer.',
                 deleteChat: '¿Borrar este chat?',
-                errorNetwork: 'Error: No se pudo conectar al servicio de IA.',
+                errorNetwork: 'Error de conexión',
+                errorReadMore: 'Leer más',
+                regionErrorTitle: 'Servicio Rinkl AI temporalmente no disponible en su región',
+                regionErrorText: 'Desafortunadamente, el acceso a Rinkl AI está actualmente restringido desde los siguientes territorios:\n\nAfganistán, Andorra, Bielorrusia, Ciudad del Vaticano, Irán, Cuba, Corea del Norte, Liechtenstein, Mónaco, Rusia, San Marino, Siria.\n\nSi se encuentra en uno de estos países, se recomienda utilizar un servicio VPN confiable y conectarse a través de un servidor ubicado en un país donde el acceso no esté restringido para continuar usando Rinkl AI.\n\nSi está fuera de estos territorios pero ve este mensaje, por favor:\n• Asegúrese de tener una conexión a Internet estable;\n• Desactive VPN/proxies (si los usa);\n• Borre la caché y las cookies del navegador;\n• Intente acceder desde otro dispositivo o red.\n\nNos disculpamos por las molestias. Estamos trabajando para expandir la geografía de disponibilidad del servicio.\n\nAtentamente, Equipo Rinkl',
+                close: 'Cerrar',
                 noResponse: 'Sin respuesta.',
                 copy: 'Copiar',
                 edit: 'Editar',
@@ -210,7 +272,11 @@
                 typeOther: 'Otro',
                 msgSent: '¡Gracias! Tu mensaje ha sido enviado.',
                 fillFields: 'Por favor completa todos los campos',
-                noReviews: 'No hay mensajes aún.'
+                noReviews: 'No hay mensajes aún.',
+                slogan1: 'IA que piensa diferente',
+                slogan2: 'Piensa menos. Haz más.',
+                slogan3: 'Donde las ideas se hacen realidad',
+                start: 'Comenzar'
             },
             cn: {
                 newChat: '新聊天',
@@ -229,7 +295,11 @@
                 feedback: '反馈',
                 confirmClear: '您确定要删除所有保存的数据吗？此操作无法撤销。',
                 deleteChat: '删除此聊天？',
-                errorNetwork: '错误：无法连接到 AI 服务。',
+                errorNetwork: '连接错误',
+                errorReadMore: '了解更多',
+                regionErrorTitle: 'Rinkl AI 服务在您所在的地区暂时不可用',
+                regionErrorText: '很遗憾，Rinkl AI 目前在以下地区受到限制：\n\n阿富汗、安道尔、白俄罗斯、梵蒂冈、伊朗、古巴、朝鲜、列支敦士登、摩纳哥、俄罗斯、圣马力诺、叙利亚。\n\n如果您位于上述国家之一，建议使用可靠的 VPN 服务，并通过位于未受限国家的服务器连接，以继续使用 Rinkl AI。\n\n如果您不在上述地区但看到此消息，请：\n• 确保您的互联网连接稳定；\n• 禁用 VPN/代理（如果正在使用）；\n• 清除浏览器缓存和 Cookie；\n• 尝试从其他设备或网络访问。\n\n对于给您带来的不便，我们深表歉意。我们正在努力扩大服务的可用范围。\n\n此致，Rinkl 团队',
+                close: '关闭',
                 noResponse: '无响应。',
                 copy: '复制',
                 edit: '编辑',
@@ -253,7 +323,11 @@
                 typeOther: '其他',
                 msgSent: '谢谢！您的消息已发送。',
                 fillFields: '请填写所有字段',
-                noReviews: '暂无消息。'
+                noReviews: '暂无消息。',
+                slogan1: '思维独特的 AI',
+                slogan2: '少思考，多行动',
+                slogan3: '创意成真的地方',
+                start: '开始'
             },
             de: {
                 newChat: 'Neuer Chat',
@@ -272,7 +346,11 @@
                 feedback: 'Feedback',
                 confirmClear: 'Sind Sie sicher, dass Sie alle gespeicherten Daten löschen möchten? Dies kann nicht rückgängig gemacht werden.',
                 deleteChat: 'Diesen Chat löschen?',
-                errorNetwork: 'Fehler: Konnte keine Verbindung zum KI-Dienst herstellen.',
+                errorNetwork: 'Verbindungsfehler',
+                errorReadMore: 'Mehr lesen',
+                regionErrorTitle: 'Rinkl AI-Dienst in Ihrer Region vorübergehend nicht verfügbar',
+                regionErrorText: 'Leider ist der Zugang zu Rinkl AI derzeit aus folgenden Gebieten eingeschränkt:\n\nAfghanistan, Andorra, Belarus, Vatikanstadt, Iran, Kuba, Nordkorea, Liechtenstein, Monaco, Russland, San Marino, Syrien.\n\nWenn Sie sich in einem dieser Länder befinden, wird empfohlen, einen zuverlässigen VPN-Dienst zu verwenden und sich über einen Server in einem Land zu verbinden, in dem der Zugang nicht eingeschränkt ist, um Rinkl AI weiterhin nutzen zu können.\n\nWenn Sie sich außerhalb dieser Gebiete befinden, diese Nachricht aber sehen, bitte:\n• Stellen Sie sicher, dass Sie eine stabile Internetverbindung haben;\n• Deaktivieren Sie VPN/Proxys (falls verwendet);\n• Löschen Sie Browser-Cache und Cookies;\n• Versuchen Sie den Zugriff von einem anderen Gerät oder Netzwerk aus.\n\nWir entschuldigen uns für die Unannehmlichkeiten. Wir arbeiten daran, die Verfügbarkeit des Dienstes geografisch zu erweitern.\n\nMit freundlichen Grüßen, Ihr Rinkl-Team',
+                close: 'Schließen',
                 noResponse: 'Keine Antwort.',
                 copy: 'Kopieren',
                 edit: 'Bearbeiten',
@@ -296,7 +374,11 @@
                 typeOther: 'Andere',
                 msgSent: 'Danke! Ihre Nachricht wurde gesendet.',
                 fillFields: 'Bitte füllen Sie alle Felder aus',
-                noReviews: 'Noch keine Nachrichten.'
+                noReviews: 'Noch keine Nachrichten.',
+                slogan1: 'KI, die anders denkt',
+                slogan2: 'Weniger denken. Mehr tun.',
+                slogan3: 'Wo Ideen Realität werden',
+                start: 'Starten'
             }
         };
 
@@ -306,209 +388,156 @@
 
         // --- COMPONENTS ---
 
-        // CodeBlock Component
-        const CodeBlock = ({ text }) => {
-            const [copied, setCopied] = useState(false);
+        // WelcomeScreen (Onboarding)
+        const WelcomeScreen = ({ onStart, settings, onUpdateSettings }) => {
+            const [sloganIndex, setSloganIndex] = useState(0);
+            const [opacity, setOpacity] = useState(0);
+            const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
             
-            // Extract content and try to find language
-            const content = text.replace(/^```/, '').replace(/```$/, '');
-            let code = content;
-            let lang = 'code';
-            
-            // Simple language detection (first line)
-            const firstNewLine = content.indexOf('\n');
-            if (firstNewLine > -1) {
-                const firstLine = content.substring(0, firstNewLine).trim();
-                if (firstLine.length > 0 && firstLine.length < 20 && /^[a-zA-Z0-9+#]+$/.test(firstLine)) {
-                    lang = firstLine;
-                    code = content.substring(firstNewLine + 1);
-                }
-            }
+            const slogans = ['slogan1', 'slogan2', 'slogan3'];
+            const t = (key) => getTranslation(settings.language, key);
 
-            const handleCopy = () => {
-                navigator.clipboard.writeText(code);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-            };
+            // Slogan Animation Loop
+            useEffect(() => {
+                let mounted = true;
+                
+                const cycle = async () => {
+                    while (mounted) {
+                        setOpacity(1);
+                        await new Promise(r => setTimeout(r, 2800)); // 0.8s fade in + 2s hold
+                        
+                        if (!mounted) break;
+
+                        setOpacity(0);
+                        await new Promise(r => setTimeout(r, 800)); // 0.8s fade out
+
+                        if (!mounted) break;
+
+                        setSloganIndex(prev => (prev + 1) % slogans.length);
+                    }
+                };
+
+                cycle();
+                return () => { mounted = false; };
+            }, []);
 
             return (
-                <div className="my-3 rounded-lg overflow-hidden bg-[#1e1e1e] border border-gray-700/50 shadow-md">
-                    <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-gray-700/50 select-none">
-                        <span className="text-xs text-gray-400 font-mono lowercase">{lang}</span>
-                        <button 
-                            onClick={handleCopy} 
-                            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors focus:outline-none"
-                            title="Copy Code"
+                <div className="fixed inset-0 z-50 flex flex-col h-full w-full bg-white overflow-hidden">
+                    {/* Top Half: Blue Gradient */}
+                    <div className="h-1/2 w-full bg-gradient-to-br from-[#5C9CE5] to-[#4A8BE0] flex flex-col items-center justify-center relative px-6 text-center shadow-lg">
+                        <div className="text-6xl md:text-7xl font-bold text-black mb-8 select-none tracking-tight">
+                            Rinkl AI
+                        </div>
+                        <div 
+                            className="text-2xl md:text-3xl text-white font-medium transition-opacity duration-[800ms] ease-in-out absolute bottom-20 w-full px-8"
+                            style={{ opacity: opacity }}
                         >
-                            {copied ? (
-                                <>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    <span className="text-green-400">Copied</span>
-                                </>
-                            ) : (
-                                <>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                    <span>Copy</span>
-                                </>
-                            )}
-                        </button>
+                            {t(slogans[sloganIndex])}
+                        </div>
                     </div>
-                    <div className="p-4 overflow-x-auto">
-                        <code className="text-sm font-mono text-gray-200 whitespace-pre">{code}</code>
+
+                    {/* Bottom Half: White */}
+                    <div className="h-1/2 w-full bg-white flex flex-col items-center pt-16 px-10 relative">
+                        {/* Start Button */}
+                        <button 
+                            onClick={onStart}
+                            className="w-full max-w-md h-14 bg-[#4A8BE0] rounded-2xl text-white font-bold text-xl shadow-lg hover:bg-[#3d7bc9] hover:shadow-xl active:scale-95 transition-all duration-200"
+                        >
+                            {t('start')}
+                        </button>
+
+                        {/* Language Selector */}
+                        <div className="mt-8 relative">
+                            <button 
+                                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+                                className="flex items-center gap-2 text-gray-500 hover:text-[#4A8BE0] transition-colors group"
+                            >
+                                <span className="underline underline-offset-4 text-sm font-medium group-hover:no-underline">
+                                    {SUPPORTED_LANGUAGES[settings.language]}
+                                </span>
+                                <div className="p-1 rounded-full bg-gray-100 group-hover:bg-blue-50 transition-colors">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                                    </svg>
+                                </div>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isLangMenuOpen ? 'rotate-180' : ''}`}>
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+
+                            {/* Language Dropdown */}
+                            {isLangMenuOpen && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 animate-fade-in z-10 overflow-hidden">
+                                    {Object.keys(SUPPORTED_LANGUAGES).map(lang => (
+                                        <button
+                                            key={lang}
+                                            onClick={() => {
+                                                onUpdateSettings({ language: lang });
+                                                setIsLangMenuOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center justify-between ${settings.language === lang ? 'text-[#4A8BE0] font-bold bg-blue-50' : 'text-gray-700'}`}
+                                        >
+                                            {SUPPORTED_LANGUAGES[lang]}
+                                            {settings.language === lang && <div className="w-1.5 h-1.5 rounded-full bg-[#4A8BE0]"></div>}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
         };
 
-        // InvitationScreen
-        const InvitationScreen = ({ onEnter }) => {
-            const [inputs, setInputs] = useState(Array(6).fill(''));
-            const [error, setError] = useState(false);
-            const [isValidating, setIsValidating] = useState(false);
-            const inputRefs = useRef([]);
+        // CodeBlock Component
+        const CodeBlock = ({ text }) => {
+            const [copied, setCopied] = useState(false);
+            
+            const content = text.replace(/^```[a-zA-Z0-9]*\n?/, '').replace(/```$/, '');
+            let lang = 'code';
+            const match = text.match(/^```([a-zA-Z0-9]+)/);
+            if (match) lang = match[1];
 
-            // Memoize Firebase refs to prevent re-initialization
-            const firebaseApp = useRef(null);
-            const database = useRef(null);
-
-            useEffect(() => {
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
-                    authDomain: "talker-7e14c.firebaseapp.com",
-                    databaseURL: "https://talker-7e14c-default-rtdb.firebaseio.com",
-                    projectId: "talker-7e14c",
-                    storageBucket: "talker-7e14c.firebasestorage.app",
-                    messagingSenderId: "615957572269",
-                    appId: "1:615957572269:web:6b082400bbdd3a69d23424",
-                    measurementId: "G-KEDM752JXL"
-                };
-                
-                try {
-                    // Check if already initialized to avoid duplicate app error
-                    firebaseApp.current = initializeApp(firebaseConfig);
-                    database.current = getDatabase(firebaseApp.current);
-                } catch (e) {
-                    // console.error("Firebase init error (likely already initialized)", e);
-                }
-                
-                if (inputRefs.current[0]) inputRefs.current[0].focus();
-            }, []);
-
-            const handleInput = (index, value) => {
-                const cleaned = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                const newInputs = [...inputs];
-                newInputs[index] = cleaned.slice(0, 1);
-                setInputs(newInputs);
-                if (error) setError(false);
-                if (cleaned && index < 5 && inputRefs.current[index + 1]) {
-                    inputRefs.current[index + 1].focus();
-                }
+            const handleCopy = () => {
+                navigator.clipboard.writeText(content);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
             };
-
-            const handleKeyDown = (index, e) => {
-                if (e.key === 'Backspace' && !inputs[index] && index > 0) {
-                    inputRefs.current[index - 1].focus();
-                }
-            };
-
-            const handlePaste = (e) => {
-                e.preventDefault();
-                const pasteData = e.clipboardData.getData('text').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-                if (pasteData.length >= 6) {
-                    const chars = pasteData.split('').slice(0, 6);
-                    setInputs(chars);
-                    inputRefs.current[5]?.focus();
-                }
-            };
-
-            const checkCode = async () => {
-                setIsValidating(true);
-                const code = inputs.join('');
-                try {
-                    const firebaseConfig = {
-                        apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
-                        authDomain: "talker-7e14c.firebaseapp.com",
-                        databaseURL: "https://talker-7e14c-default-rtdb.firebaseio.com",
-                        projectId: "talker-7e14c",
-                        storageBucket: "talker-7e14c.firebasestorage.app",
-                        messagingSenderId: "615957572269",
-                        appId: "1:615957572269:web:6b082400bbdd3a69d23424",
-                        measurementId: "G-KEDM752JXL"
-                    };
-                    const app = initializeApp(firebaseConfig, "invitationApp"); 
-                    const db = getDatabase(app);
-
-                    const codeRef = ref(db, 'inviteCodes/' + code);
-                    const snapshot = await get(codeRef);
-                    if (snapshot.exists()) {
-                        const codeData = snapshot.val();
-                        if (codeData.used) {
-                            showError();
-                        } else {
-                            await update(codeRef, { used: true });
-                            onEnter();
-                        }
-                    } else {
-                        showError();
-                    }
-                } catch (err) {
-                    console.error('Error checking code:', err);
-                    if (code === "DEMO01") onEnter(); else showError();
-                } finally {
-                    setIsValidating(false);
-                }
-            };
-
-            const showError = () => {
-                setError(true);
-                setTimeout(() => {
-                    setError(false);
-                    setInputs(Array(6).fill(''));
-                    inputRefs.current[0]?.focus();
-                }, 2000);
-            };
-
-            const isComplete = inputs.every(char => char.length > 0);
 
             return (
-                <div className="flex flex-col items-center justify-between min-h-screen p-5 bg-[#f5f5f5] overflow-y-auto">
-                    <div className="text-center mt-10">
-                        <div className="text-[#0066cc] text-5xl font-bold relative inline-block mb-1">Rinkl</div>
-                        <span className="text-black text-base block -mt-1">beta</span>
-                    </div>
-                    <div className="text-center mt-[15vh] w-full max-w-md">
-                        <h1 className="text-3xl text-black mb-10 leading-snug">Enter your invitation code</h1>
-                        <div className="flex justify-center gap-2 mb-10">
-                            {inputs.map((val, idx) => (
-                                <input
-                                    key={idx}
-                                    ref={el => { inputRefs.current[idx] = el }}
-                                    type="text"
-                                    className={`w-10 h-[50px] text-center text-2xl border-2 rounded-md outline-none transition-colors duration-300 uppercase ${error ? 'border-red-500' : 'border-gray-300 focus:border-[#0066cc]'}`}
-                                    maxLength={1}
-                                    value={val}
-                                    onChange={(e) => handleInput(idx, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(idx, e)}
-                                    onPaste={handlePaste}
-                                    disabled={isValidating}
-                                />
-                            ))}
+                <div className="my-3 rounded-lg overflow-hidden bg-[#1e1e1e] border border-gray-700/50 shadow-lg group">
+                    <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-gray-700/50 select-none">
+                        <div className="flex items-center gap-2">
+                             <div className="flex gap-1.5">
+                                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                             </div>
+                             <span className="text-xs text-gray-500 font-mono ml-2 lowercase">{lang}</span>
                         </div>
-                        {error && (
-                            <div className="mb-5 animate-bounce">
-                                <div className="text-4xl text-red-500 mb-2">✕</div>
-                                <div className="text-red-500 text-lg font-bold">ERROR</div>
-                            </div>
-                        )}
-                        <button
-                            onClick={checkCode}
-                            disabled={!isComplete || isValidating}
-                            className={`bg-[#a0d2eb] border-none rounded-full px-10 py-4 text-lg text-black cursor-pointer transition-colors duration-300 mt-[10vh] hover:bg-[#8bc5e3] disabled:bg-[#cccccc] disabled:cursor-not-allowed`}
+                        <button 
+                            onClick={handleCopy} 
+                            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors focus:outline-none bg-gray-700/50 hover:bg-gray-700 px-2 py-1 rounded"
+                            title="Copy Code"
                         >
-                            {isValidating ? 'CHECKING...' : 'ENTER'}
+                            {copied ? (
+                                <>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span className="text-green-400 font-medium">Copied</span>
+                                </>
+                            ) : (
+                                <>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <span>Copy</span>
+                                </>
+                            )}
                         </button>
                     </div>
-                    <div className="h-10"></div>
+                    <div className="p-4 overflow-x-auto custom-scrollbar">
+                        <code className="text-[13px] leading-relaxed font-mono text-gray-300 whitespace-pre font-normal">{content}</code>
+                    </div>
                 </div>
             );
         };
@@ -530,7 +559,6 @@
             });
 
             const t = (key) => getTranslation(settings.language, key);
-
             const dbRef = useRef(null);
 
             useEffect(() => {
@@ -554,13 +582,10 @@
                 const database = getDatabase(app);
                 dbRef.current = database;
                 
-                loadUserReviews(database);
-            }, []);
-
-            const loadUserReviews = (db) => {
-                const feedbackRef = ref(db, 'feedback');
+                const feedbackRef = ref(database, 'feedback');
                 const userFeedbackQuery = query(feedbackRef, orderByChild('userId'));
-                onValue(userFeedbackQuery, (snapshot) => {
+                
+                const unsubscribe = onValue(userFeedbackQuery, (snapshot) => {
                     const feedbacks = [];
                     if (snapshot.exists()) {
                         snapshot.forEach((childSnapshot) => {
@@ -573,7 +598,9 @@
                     feedbacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                     setReviews(feedbacks);
                 });
-            };
+
+                return () => unsubscribe();
+            }, []);
 
             const handleSubmit = async (e) => {
                 e.preventDefault();
@@ -615,52 +642,52 @@
             ];
 
             return (
-                <div className="fixed inset-0 z-50 flex flex-col bg-[#f5f7fa] dark:bg-gray-900 text-[#333] dark:text-gray-100 overflow-hidden">
+                <div className="fixed inset-0 z-50 flex flex-col bg-[#f8fafc] dark:bg-gray-900 text-[#333] dark:text-gray-100 overflow-hidden font-sans">
                     {/* Header */}
-                    <div className="p-4 bg-white dark:bg-gray-800 shadow-sm flex items-center gap-4">
-                        <button onClick={onBack} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm flex items-center gap-4 z-10 sticky top-0">
+                        <button onClick={onBack} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700/50 rounded-full transition-colors">
                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
                         </button>
-                        <h1 className="text-xl font-bold">{t('feedbackTitle')}</h1>
+                        <h1 className="text-lg font-bold tracking-tight">{t('feedbackTitle')}</h1>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                        <div className="max-w-3xl mx-auto space-y-6">
-                            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+                        <div className="max-w-2xl mx-auto space-y-6 pb-10">
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div>
-                                        <label htmlFor="type" className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{t('messageType')}</label>
+                                        <label htmlFor="type" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">{t('messageType')}</label>
                                         <div className="relative">
                                             <select 
                                                 id="type" 
                                                 value={type} 
                                                 onChange={(e) => setType(e.target.value)} 
-                                                className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                                className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white transition-shadow"
                                                 required
                                             >
                                                 <option value="">{t('selectType')}</option>
                                                 {typeOptions.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
                                             </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
                                                 <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                                             </div>
                                         </div>
                                     </div>
                                     <div>
-                                        <label htmlFor="message" className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">{t('yourMessage')}</label>
+                                        <label htmlFor="message" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">{t('yourMessage')}</label>
                                         <textarea 
                                             id="message" 
                                             value={message} 
                                             onChange={(e) => setMessage(e.target.value)} 
                                             placeholder="..." 
-                                            className="w-full p-3 h-32 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none dark:text-white"
+                                            className="w-full p-4 h-32 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none dark:text-white transition-shadow"
                                             required
                                         ></textarea>
                                     </div>
                                     <button 
                                         type="submit" 
                                         disabled={isSending}
-                                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                        className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-[0.98]"
                                     >
                                         {isSending ? t('sending') : t('sendMessage')}
                                     </button>
@@ -668,40 +695,43 @@
                             </div>
                             
                             {status.msg && (
-                                <div className={`p-4 rounded-lg text-center font-medium animate-fade-in ${status.type === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                                <div className={`p-4 rounded-xl text-center font-medium animate-fade-in ${status.type === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-100 dark:border-red-800' : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-100 dark:border-green-800'}`}>
                                     {status.msg}
                                 </div>
                             )}
 
                             <div className="space-y-4">
-                                <h2 className="text-lg font-semibold text-center text-gray-500 dark:text-gray-400 uppercase tracking-wide text-sm">{t('myMessages')}</h2>
+                                <h2 className="text-sm font-bold text-center text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('myMessages')}</h2>
                                 {reviews.length === 0 ? (
-                                    <div className="text-center py-10 text-gray-400 italic bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                    <div className="text-center py-12 text-gray-400 italic bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
                                         {t('noReviews')}
                                     </div>
                                 ) : (
                                     reviews.map((feedback) => (
-                                        <div key={feedback.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden">
-                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                                        <div key={feedback.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden transition-transform hover:scale-[1.01] duration-300">
+                                            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
                                             <div className="flex justify-between items-center mb-3">
-                                                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                                                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wide">
                                                     {typeOptions.find(o => o.val === feedback.type)?.label || feedback.type}
                                                 </span>
-                                                <span className="text-xs text-gray-500">{new Date(feedback.createdAt).toLocaleDateString()}</span>
+                                                <span className="text-xs text-gray-400 font-medium">{new Date(feedback.createdAt).toLocaleDateString()}</span>
                                             </div>
-                                            <div className="text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-wrap">{feedback.message}</div>
+                                            <div className="text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-wrap leading-relaxed">{feedback.message}</div>
                                             
                                             {feedback.adminResponse ? (
-                                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800/50">
-                                                    <div className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-1">{t('adminResponse')}</div>
-                                                    <div className="text-gray-700 dark:text-gray-300 text-sm">{feedback.adminResponse}</div>
-                                                    <div className="text-xs text-gray-400 mt-2 text-right">
+                                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30">
+                                                    <div className="text-xs font-bold text-blue-800 dark:text-blue-300 mb-1 uppercase tracking-wide">{t('adminResponse')}</div>
+                                                    <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{feedback.adminResponse}</div>
+                                                    <div className="text-[10px] text-gray-400 mt-2 text-right">
                                                         {new Date(feedback.respondedAt).toLocaleDateString()}
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="text-xs text-gray-400 italic flex items-center gap-1">
-                                                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                                                <div className="text-xs text-gray-400 italic flex items-center gap-1.5">
+                                                    <span className="relative flex h-2 w-2">
+                                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                                    </span>
                                                     {t('waitingResponse')}
                                                 </div>
                                             )}
@@ -744,34 +774,34 @@
             if (!isOpen) return null;
 
             return (
-                <div className="fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                            <h2 className="text-xl font-bold dark:text-white">{t('settings')}</h2>
-                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-fade-in font-sans">
+                    <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-white/50 dark:bg-gray-800/50">
+                            <h2 className="text-lg font-bold dark:text-white tracking-tight">{t('settings')}</h2>
+                            <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-all">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
-                        <div className="p-6 overflow-y-auto space-y-6">
+                        <div className="p-6 overflow-y-auto space-y-8">
                             {/* Data Management */}
                             <section>
-                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('dataManagement')}</h3>
-                                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('dataManagement')}</h3>
+                                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-100 dark:border-gray-700/50">
                                     <div className="flex justify-between items-center mb-4">
-                                        <span className="text-gray-700 dark:text-gray-300">{t('usedStorage')}</span>
-                                        <span className="font-mono text-gray-900 dark:text-white font-medium">{storageSize}</span>
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('usedStorage')}</span>
+                                        <span className="font-mono text-sm text-gray-900 dark:text-white font-bold">{storageSize}</span>
                                     </div>
-                                    <button onClick={handleClearCache} className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition-colors shadow-sm">
+                                    <button onClick={handleClearCache} className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm active:scale-[0.98]">
                                         {t('clearCache')}
                                     </button>
                                 </div>
                             </section>
                             {/* Language */}
                             <section>
-                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('language')}</h3>
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('language')}</h3>
                                 <div className="grid grid-cols-2 gap-2">
                                     {Object.keys(SUPPORTED_LANGUAGES).map((lang) => (
-                                        <button key={lang} onClick={() => onUpdateSettings({ language: lang })} className={`py-2 px-3 rounded-lg text-sm font-medium transition-all ${settings.language === lang ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 ring-2 ring-blue-500/20' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700/50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+                                        <button key={lang} onClick={() => onUpdateSettings({ language: lang })} className={`py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${settings.language === lang ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700/50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
                                             {SUPPORTED_LANGUAGES[lang]}
                                         </button>
                                     ))}
@@ -779,27 +809,55 @@
                             </section>
                             {/* Appearance */}
                             <section>
-                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('appearance')}</h3>
-                                <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('appearance')}</h3>
+                                <div className="flex bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-xl">
                                     {['light', 'dark', 'auto'].map((mode) => (
-                                        <button key={mode} onClick={() => onUpdateSettings({ theme: mode })} className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-all ${settings.theme === mode ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                                        <button key={mode} onClick={() => onUpdateSettings({ theme: mode })} className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all duration-200 ${settings.theme === mode ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
                                             {t(mode)}
                                         </button>
                                     ))}
                                 </div>
                             </section>
                             {/* Feedback Button */}
-                            <button onClick={onOpenFeedback} className="w-full py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-xl font-medium transition-colors flex items-center justify-center gap-2">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                            <button onClick={onOpenFeedback} className="w-full py-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group">
+                                <svg className="group-hover:scale-110 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                 {t('feedbackBtn')}
                             </button>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
-                            <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.37</p>
+                        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 text-center">
+                            <p className="text-[10px] text-gray-400 font-mono tracking-wider">Rinkl AI v1.0.39</p>
                         </div>
                     </div>
                 </div>
             );
+        };
+
+        // Region Error Modal
+        const RegionErrorModal = ({ isOpen, onClose, settings }) => {
+             const t = (key) => getTranslation(settings.language, key);
+             
+             if (!isOpen) return null;
+
+             return (
+                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-fade-in font-sans">
+                     <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+                         <div className="p-8 overflow-y-auto">
+                            <div className="flex items-center gap-3 mb-4 text-orange-600 dark:text-orange-500">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('regionErrorTitle')}</h2>
+                            </div>
+                            <div className="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed pl-1">
+                                {t('regionErrorText')}
+                            </div>
+                         </div>
+                         <div className="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
+                             <button onClick={onClose} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md active:scale-[0.99]">
+                                 {t('close')}
+                             </button>
+                         </div>
+                     </div>
+                 </div>
+             );
         };
 
         // ChatScreen
@@ -815,6 +873,7 @@
             const [editingMessageId, setEditingMessageId] = useState(null);
             const [editText, setEditText] = useState('');
             const [showScrollBottom, setShowScrollBottom] = useState(false);
+            const [showRegionError, setShowRegionError] = useState(false);
             
             const messagesEndRef = useRef(null);
             const chatContainerRef = useRef(null);
@@ -985,55 +1044,81 @@
             };
             
             const handleClearData = () => {
-                const auth = localStorage.getItem('rinkl_auth_completed');
                 const userId = localStorage.getItem('userId');
                 localStorage.clear();
-                if (auth) localStorage.setItem('rinkl_auth_completed', auth);
                 if (userId) localStorage.setItem('userId', userId);
                 window.location.reload();
             };
 
-            const renderContent = (text) => {
+            const renderContent = (msg) => {
+                const text = msg.text;
+                
+                // If it's an error message
+                if (msg.isError) {
+                    return (
+                        <div className="flex flex-col items-start gap-1">
+                             <div className="text-red-500 font-bold">{t('errorNetwork')}</div>
+                             <button 
+                                onClick={() => setShowRegionError(true)} 
+                                className="text-blue-500 hover:text-blue-600 font-semibold text-sm hover:underline focus:outline-none flex items-center gap-1"
+                             >
+                                {t('errorReadMore')}
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                             </button>
+                        </div>
+                    );
+                }
+
+                // Normal content
                 const parts = text.split(/(```[\s\S]*?```|`[^`]+`|\*\*[^*]+\*\*)/g);
                 return parts.map((part, i) => {
                     if (part.startsWith('```')) {
                         return <CodeBlock key={i} text={part} />;
                     }
-                    if (part.startsWith('`')) return <code key={i} className="bg-gray-200 dark:bg-gray-700 px-1 rounded text-sm font-mono">{part.replace(/`/g, '')}</code>;
-                    if (part.startsWith('**')) return <strong key={i}>{part.replace(/\*\*/g, '')}</strong>;
+                    if (part.startsWith('`')) return <code key={i} className="bg-gray-100 dark:bg-gray-800 text-pink-500 dark:text-pink-400 px-1.5 py-0.5 rounded text-[13px] font-mono border border-gray-200 dark:border-gray-700">{part.replace(/`/g, '')}</code>;
+                    if (part.startsWith('**')) return <strong key={i} className="font-bold text-gray-900 dark:text-gray-100">{part.replace(/\*\*/g, '')}</strong>;
+                    // Handle newlines in regular text
                     return <span key={i} className="whitespace-pre-wrap">{part}</span>;
                 });
             };
 
             return (
-                <div className="flex h-full flex-col bg-[#f5f7fa] dark:bg-gray-900 transition-colors duration-300">
-                    <header className="flex-none flex items-center justify-center p-4 bg-white dark:bg-gray-800 shadow-sm relative z-20">
-                        <button onClick={() => setIsSidebarOpen(true)} className="absolute left-4 p-2 text-gray-600 dark:text-gray-300">
-                            <div className="w-6 h-0.5 bg-current mb-1.5"></div>
-                            <div className="w-6 h-0.5 bg-current mb-1.5"></div>
-                            <div className="w-6 h-0.5 bg-current"></div>
+                <div className="flex h-full flex-col bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300 font-sans">
+                    <header className="flex-none flex items-center justify-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm relative z-20 transition-all border-b border-gray-100 dark:border-gray-800">
+                        <button onClick={() => setIsSidebarOpen(true)} className="absolute left-4 p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full transition-colors">
+                            <div className="w-5 h-0.5 bg-current mb-1 rounded-full"></div>
+                            <div className="w-5 h-0.5 bg-current mb-1 rounded-full"></div>
+                            <div className="w-5 h-0.5 bg-current rounded-full"></div>
                         </button>
-                        <div className={`px-5 py-2 rounded-full border-2 font-semibold text-sm transition-colors duration-300 border-green-500 text-green-700 dark:text-green-400`}>
+                        <div className={`px-4 py-1.5 rounded-full border border-opacity-30 font-semibold text-sm transition-all duration-300 flex items-center gap-2
+                            ${connectionStatus === 'connected' ? (isTyping ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400' : 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400') : 
+                              connectionStatus === 'connecting' ? 'bg-orange-50 border-orange-200 text-orange-600 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400' : 
+                              'bg-red-50 border-red-200 text-red-600'}`}>
+                            {isTyping && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
                             Rinkl AI
                         </div>
                     </header>
-                    {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30" onClick={() => setIsSidebarOpen(false)} />}
-                    <aside className={`fixed top-0 left-0 h-full w-[300px] bg-white dark:bg-gray-800 shadow-xl z-40 transform transition-transform duration-300 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                    {isSidebarOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 transition-opacity" onClick={() => setIsSidebarOpen(false)} />}
+                    <aside className={`fixed top-0 left-0 h-full w-[280px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-2xl z-40 transform transition-transform duration-300 flex flex-col border-r border-gray-100 dark:border-gray-700
+                        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                         <div className="p-5 border-b border-gray-100 dark:border-gray-700 space-y-3">
-                            <button onClick={createNewChat} className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 font-medium transition-colors">
-                                <span>+</span> {t('newChat')}
+                            <button onClick={createNewChat} className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all shadow-md active:scale-[0.98]">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                {t('newChat')}
                             </button>
-                            <button onClick={() => setIsSettingsOpen(true)} className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl flex items-center justify-center gap-2 font-medium transition-colors">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                            <button onClick={() => setIsSettingsOpen(true)} className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors border border-gray-200 dark:border-gray-600">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                                 {t('settings')}
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                        <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                             {Object.keys(chats).map(id => (
-                                <div key={id} onClick={() => { setCurrentChatId(id); setIsSidebarOpen(false); }} className={`p-3 rounded-xl cursor-pointer group relative border transition-all ${currentChatId === id ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
-                                    <div className="font-medium text-gray-800 dark:text-gray-200 text-sm">{t('chat')} {id.split('_')[1] || '1'}</div>
-                                    <div className="text-xs text-gray-500 truncate mt-1">{chats[id][chats[id].length -1]?.text.substring(0, 30) || t('newConversation')}</div>
-                                    <button onClick={(e) => deleteChat(e, id)} className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity text-xs">Del</button>
+                                <div key={id} onClick={() => { setCurrentChatId(id); setIsSidebarOpen(false); }} className={`p-3.5 rounded-xl cursor-pointer group relative border transition-all duration-200 ${currentChatId === id ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/50' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
+                                    <div className="font-semibold text-gray-800 dark:text-gray-200 text-sm tracking-tight">{t('chat')} {id.split('_')[1]?.slice(-4) || '1'}</div>
+                                    <div className="text-xs text-gray-500 truncate mt-1.5 leading-relaxed opacity-80">{chats[id][chats[id].length -1]?.text.substring(0, 35) || t('newConversation')}</div>
+                                    <button onClick={(e) => deleteChat(e, id)} className="absolute top-3 right-3 p-1.5 bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200 dark:hover:bg-red-900">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -1042,85 +1127,89 @@
                         <div 
                             ref={chatContainerRef}
                             onScroll={handleScroll}
-                            className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0 scroll-smooth"
+                            className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 min-h-0 scroll-smooth custom-scrollbar"
                         >
                             {chats[currentChatId]?.map((msg, index) => (
-                                <div key={index} className={`flex flex-col max-w-[85%] ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
-                                    <div className={`p-4 shadow-sm relative text-base leading-relaxed mb-1 ${msg.sender === 'user' ? 'bg-[#2c3e50] text-white rounded-t-2xl rounded-bl-2xl' : 'bg-[#f1f3f4] text-gray-800 dark:bg-gray-700 dark:text-gray-100 rounded-t-2xl rounded-br-2xl'}`}>
+                                <div key={index} className={`flex flex-col max-w-[90%] md:max-w-[85%] animate-slide-up ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`} style={{animationDelay: '0ms'}}>
+                                    <div className={`px-5 py-3.5 shadow-sm relative text-[15px] leading-7 mb-1.5 transition-all
+                                        ${msg.sender === 'user' 
+                                            ? 'bg-[#2c3e50] text-white rounded-[20px] rounded-br-[4px]' 
+                                            : 'bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100 rounded-[20px] rounded-bl-[4px] border border-gray-100 dark:border-gray-700'
+                                        }`}>
                                         {msg.media && msg.media.length > 0 && (
                                             <div className="flex flex-wrap gap-2 mb-3">
-                                                {msg.media.map((m, i) => <img key={i} src={m.url} alt="attachment" className="w-24 h-24 object-cover rounded-lg border border-white/20" />)}
+                                                {msg.media.map((m, i) => <img key={i} src={m.url} alt="attachment" className="w-24 h-24 object-cover rounded-xl border-2 border-white/20 shadow-sm" />)}
                                             </div>
                                         )}
-                                        {renderContent(msg.text)}
+                                        {renderContent(msg)}
                                     </div>
-                                    <div className="flex gap-2 self-start px-1">
-                                        <button onClick={() => handleCopy(msg.text)} title={t('copy')} className="opacity-50 hover:opacity-100 transition-opacity p-1 text-gray-500 dark:text-gray-400">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    <div className="flex gap-1.5 self-start px-1 opacity-60 hover:opacity-100 transition-opacity">
+                                        <button onClick={() => handleCopy(msg.text)} title={t('copy')} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                         </button>
                                         {msg.sender === 'user' && (
-                                            <button onClick={() => openEditModal(msg)} title={t('edit')} className="opacity-50 hover:opacity-100 transition-opacity p-1 text-gray-500 dark:text-gray-400">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            <button onClick={() => openEditModal(msg)} title={t('edit')} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                             </button>
                                         )}
                                     </div>
                                 </div>
                             ))}
                             {isTyping && (
-                                <div className="flex items-start">
-                                    <div className="bg-[#f1f3f4] dark:bg-gray-700 p-4 rounded-t-2xl rounded-br-2xl">
-                                        <div className="typing-dots flex space-x-1">
-                                            <span className="w-2 h-2 bg-gray-400 rounded-full"></span><span className="w-2 h-2 bg-gray-400 rounded-full"></span><span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                                <div className="flex items-start animate-fade-in">
+                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-[20px] rounded-bl-[4px] border border-gray-100 dark:border-gray-700 shadow-sm">
+                                        <div className="typing-dots flex space-x-1.5">
+                                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
                                         </div>
                                     </div>
                                 </div>
                             )}
-                            <div ref={messagesEndRef} />
+                            <div ref={messagesEndRef} className="h-4" />
                         </div>
                         
                         {/* Scroll to bottom button */}
-                        <div className={`absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none transition-opacity duration-300 ${showScrollBottom ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className={`absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none transition-all duration-300 transform ${showScrollBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                             <button 
                                 onClick={scrollToBottom}
-                                className="pointer-events-auto bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:scale-110 transition-transform"
+                                className="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur shadow-lg border border-gray-100 dark:border-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:scale-110 active:scale-95 transition-all group"
                             >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+                                <svg className="group-hover:translate-y-0.5 transition-transform" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
                             </button>
                         </div>
 
-                        <div className="p-4 bg-transparent flex-none">
+                        <div className="p-4 bg-transparent flex-none z-20">
                             {mediaList.length > 0 && (
-                                <div className="flex gap-2 mb-2 p-2 bg-white dark:bg-gray-800 rounded-xl overflow-x-auto shadow-sm">
+                                <div className="flex gap-3 mb-3 p-3 bg-white dark:bg-gray-800 rounded-2xl overflow-x-auto shadow-sm border border-gray-100 dark:border-gray-700 animate-slide-up">
                                     {mediaList.map((m, i) => (
-                                        <div key={i} className="relative flex-shrink-0">
-                                            <img src={m.url} alt="preview" className="w-16 h-16 object-cover rounded-lg" />
-                                            <button onClick={() => setMediaList(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">×</button>
+                                        <div key={i} className="relative flex-shrink-0 group">
+                                            <img src={m.url} alt="preview" className="w-16 h-16 object-cover rounded-xl shadow-sm" />
+                                            <button onClick={() => setMediaList(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-white dark:bg-gray-700 text-red-500 rounded-full w-6 h-6 flex items-center justify-center text-sm shadow-md border border-gray-100 dark:border-gray-600 hover:scale-110 transition-transform">×</button>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                            <div className="flex items-end bg-white dark:bg-gray-800 rounded-[28px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-gray-100 dark:border-gray-700 p-2">
+                            <div className={`flex items-end bg-white dark:bg-gray-800 rounded-[26px] shadow-lg shadow-gray-200/50 dark:shadow-black/20 border transition-all duration-300 p-2 ${isTyping ? 'border-gray-200 dark:border-gray-700 opacity-80' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10'}`}>
                                 <div className="flex items-center justify-center pb-1 pl-1">
                                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} multiple accept="image/*" className="hidden" />
-                                    <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors" title="Attach">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95" title="Attach">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     </button>
                                 </div>
-                                <textarea ref={textareaRef} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t('typeMessage')} className="flex-1 max-h-32 min-h-[44px] py-2.5 px-4 bg-transparent border-none outline-none resize-none text-gray-700 dark:text-gray-200" rows={1} />
-                                <button onClick={handleSendMessage} disabled={(!inputText && mediaList.length === 0) || isTyping} className={`w-11 h-11 rounded-full flex items-center justify-center transition-all mb-0.5 mr-0.5 ${(!inputText && mediaList.length === 0) || isTyping ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-md'}`}>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                <textarea ref={textareaRef} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t('typeMessage')} className="flex-1 max-h-32 min-h-[44px] py-2.5 px-3 bg-transparent border-none outline-none resize-none text-gray-800 dark:text-gray-100 placeholder-gray-400 text-[15px] leading-6" rows={1} />
+                                <button onClick={handleSendMessage} disabled={(!inputText && mediaList.length === 0) || isTyping} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all mb-1 mr-1 ${(!inputText && mediaList.length === 0) || isTyping ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg active:scale-95'}`}>
+                                    <svg className={(!inputText && mediaList.length === 0) || isTyping ? '' : 'ml-0.5'} width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                 </button>
                             </div>
                         </div>
                     </main>
                     {editingMessageId && (
-                        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+                            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-slide-up">
                                 <h3 className="text-lg font-bold mb-4 dark:text-white">{t('editMessage')}</h3>
-                                <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full h-32 p-3 border border-gray-200 dark:border-gray-700 rounded-xl resize-none mb-6 outline-none focus:border-blue-500 dark:bg-gray-700 dark:text-white" />
+                                <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full h-32 p-4 border border-gray-200 dark:border-gray-700 rounded-xl resize-none mb-6 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all text-[15px] leading-relaxed" />
                                 <div className="flex justify-end gap-3">
-                                    <button onClick={() => setEditingMessageId(null)} className="px-5 py-2.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">{t('cancel')}</button>
-                                    <button onClick={saveEditedMessage} className="px-5 py-2.5 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all">{t('saveRegenerate')}</button>
+                                    <button onClick={() => setEditingMessageId(null)} className="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">{t('cancel')}</button>
+                                    <button onClick={saveEditedMessage} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98]">{t('saveRegenerate')}</button>
                                 </div>
                             </div>
                         </div>
@@ -1133,22 +1222,38 @@
                         onClearData={handleClearData}
                         onOpenFeedback={onNavigateFeedback}
                     />
+                    <RegionErrorModal 
+                        isOpen={showRegionError} 
+                        onClose={() => setShowRegionError(false)} 
+                        settings={settings} 
+                    />
                 </div>
             );
         };
 
         // App
         const App = () => {
-            const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [isLoading, setIsLoading] = useState(true);
-            const [settings, setSettings] = useState({ theme: 'auto', language: 'ru' });
+            const [settings, setSettings] = useState({ theme: 'auto', language: 'en' });
             const [view, setView] = useState('chat'); // chat, feedback
+            const [showOnboarding, setShowOnboarding] = useState(false);
 
             useEffect(() => {
-                const authStatus = localStorage.getItem('rinkl_auth_completed');
-                if (authStatus === 'true') setIsAuthenticated(true);
                 const savedSettings = localStorage.getItem('rinkl_settings');
-                if (savedSettings) { try { setSettings(JSON.parse(savedSettings)); } catch (e) { } }
+                const onboardingDone = localStorage.getItem('rinkl_onboarding_completed');
+
+                if (savedSettings) { 
+                    try { 
+                        setSettings(JSON.parse(savedSettings)); 
+                    } catch (e) { } 
+                } else if (!onboardingDone) {
+                    setSettings({ theme: 'auto', language: 'en' });
+                }
+
+                if (!onboardingDone) {
+                    setShowOnboarding(true);
+                }
+
                 setIsLoading(false);
             }, []);
 
@@ -1165,21 +1270,23 @@
                 return () => mediaQuery.removeEventListener('change', handler);
             }, [settings.theme]);
 
-            const handleAuthSuccess = () => {
-                localStorage.setItem('rinkl_auth_completed', 'true');
-                setIsAuthenticated(true);
-            };
-
             const updateSettings = (newSettings) => {
                 const updated = { ...settings, ...newSettings };
                 setSettings(updated);
                 localStorage.setItem('rinkl_settings', JSON.stringify(updated));
             };
 
-            if (isLoading) return null;
-            
-            if (!isAuthenticated) return <InvitationScreen onEnter={handleAuthSuccess} />;
+            const handleStartOnboarding = () => {
+                localStorage.setItem('rinkl_onboarding_completed', 'true');
+                setShowOnboarding(false);
+            };
 
+            if (isLoading) return null;
+
+            if (showOnboarding) {
+                return <WelcomeScreen onStart={handleStartOnboarding} settings={settings} onUpdateSettings={updateSettings} />;
+            }
+            
             if (view === 'feedback') return <FeedbackScreen onBack={() => setView('chat')} settings={settings} />;
             
             return <ChatScreen settings={settings} onUpdateSettings={updateSettings} onNavigateFeedback={() => setView('feedback')} />;

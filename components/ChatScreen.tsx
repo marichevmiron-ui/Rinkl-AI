@@ -143,7 +143,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            Array.from(e.target.files).forEach(file => {
+            Array.from(e.target.files).forEach((file: File) => {
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     setMediaList(prev => [...prev, {
