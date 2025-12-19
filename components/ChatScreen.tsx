@@ -9,6 +9,19 @@ interface ChatScreenProps {
     onUpdateSettings: (s: Partial<AppSettings>) => void;
 }
 
+interface FeedbackMessage {
+    id: string;
+    type: string;
+    text: string;
+    timestamp: string;
+    response?: string;
+}
+
+const API_KEYS = [
+    "AIzaSyA_tf9A72GxzpcC7v1lXWFQGqkVFWBN820",
+    "AIzaSyDk0tuyVpWEdqZ0-EUJXNntMK3YOGA1g8g"
+];
+
 // Optimized Message Item with Memoization
 const MessageItem = memo(({ msg, onCopy, onEdit }: { msg: Message, onCopy: (t: string) => void, onEdit: (msg: Message) => void }) => {
     const renderContent = (text: string) => {
@@ -72,10 +85,17 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
     const [inputText, setInputText] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [mediaList, setMediaList] = useState<MediaItem[]>([]);
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editText, setEditText] = useState('');
+
+    // Feedback States
+    const [feedbackType, setFeedbackType] = useState('Feedback');
+    const [feedbackText, setFeedbackText] = useState('');
+    const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([]);
+    const [isSendingFeedback, setIsSendingFeedback] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -96,6 +116,11 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
             }
         } else {
             setChats({ 'default': [] });
+        }
+
+        const savedFeedback = localStorage.getItem('rinkl_feedback');
+        if (savedFeedback) {
+            try { setFeedbackMessages(JSON.parse(savedFeedback)); } catch (e) {}
         }
     }, []);
 
@@ -130,22 +155,44 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
         setIsTyping(true);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const history = updatedChats[currentChatId].map(msg => ({
-                role: msg.sender === 'user' ? 'user' : 'model',
-                parts: msg.media && msg.media.length > 0 
-                    ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))]
-                    : [{ text: msg.text }]
-            }));
+            // Priority 1: Use process.env.API_KEY if available
+            // Priority 2: Use provided keys in list
+            const keysToTry = [process.env.API_KEY, ...API_KEYS].filter(Boolean) as string[];
+            let responseText = '';
+            let success = false;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.0-flash',
-                contents: history,
-            });
+            for (const key of keysToTry) {
+                try {
+                    // Try direct REST fetch first as it's often more reliable for simple text in browser envs
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: updatedChats[currentChatId].map(msg => ({
+                                role: msg.sender === 'user' ? 'user' : 'model',
+                                parts: msg.media && msg.media.length > 0 
+                                    ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))]
+                                    : [{ text: msg.text }]
+                            }))
+                        })
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+                        success = true;
+                        break;
+                    }
+                } catch (e) {
+                    console.warn(`Key ${key} failed or blocked. Trying next.`);
+                }
+            }
+
+            if (!success) throw new Error("All API attempts failed.");
 
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
-                text: response.text || "No response.",
+                text: responseText,
                 sender: 'ai',
                 timestamp: new Date().toISOString()
             };
@@ -156,7 +203,7 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
                 ...prev,
                 [currentChatId]: [...prev[currentChatId], {
                     id: (Date.now() + 1).toString(),
-                    text: "Connection error. Please try again later.",
+                    text: "Connection error. This may be due to regional restrictions. Please check your VPN or try again later.",
                     sender: 'ai',
                     isError: true,
                     timestamp: new Date().toISOString()
@@ -165,6 +212,26 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
         } finally {
             setIsTyping(false);
         }
+    };
+
+    const handleSendFeedback = () => {
+        if (!feedbackText.trim()) return;
+        setIsSendingFeedback(true);
+        
+        const newMsg: FeedbackMessage = {
+            id: Date.now().toString(),
+            type: feedbackType,
+            text: feedbackText,
+            timestamp: new Date().toISOString()
+        };
+
+        setTimeout(() => {
+            const updated = [newMsg, ...feedbackMessages];
+            setFeedbackMessages(updated);
+            localStorage.setItem('rinkl_feedback', JSON.stringify(updated));
+            setFeedbackText('');
+            setIsSendingFeedback(false);
+        }, 1000);
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,23 +283,45 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
             setEditingMessageId(null);
             setIsTyping(true);
             try {
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-                const history = newHistory.map(msg => ({
-                    role: msg.sender === 'user' ? 'user' : 'model',
-                    parts: msg.media && msg.media.length > 0 
-                        ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))]
-                        : [{ text: msg.text }]
-                }));
-                const response = await ai.models.generateContent({ model: 'gemini-2.0-flash', contents: history });
-                setChats(prev => ({
-                    ...prev,
-                    [currentChatId]: [...prev[currentChatId], {
-                        id: Date.now().toString(),
-                        text: response.text || "No response.",
-                        sender: 'ai',
-                        timestamp: new Date().toISOString()
-                    }]
-                }));
+                // Same robust sending logic for editing
+                const keysToTry = [process.env.API_KEY, ...API_KEYS].filter(Boolean) as string[];
+                let responseText = '';
+                let success = false;
+
+                for (const key of keysToTry) {
+                    try {
+                        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: newHistory.map(msg => ({
+                                    role: msg.sender === 'user' ? 'user' : 'model',
+                                    parts: msg.media && msg.media.length > 0 
+                                        ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))]
+                                        : [{ text: msg.text }]
+                                }))
+                            })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+                            success = true;
+                            break;
+                        }
+                    } catch(e) {}
+                }
+
+                if (success) {
+                    setChats(prev => ({
+                        ...prev,
+                        [currentChatId]: [...prev[currentChatId], {
+                            id: Date.now().toString(),
+                            text: responseText,
+                            sender: 'ai',
+                            timestamp: new Date().toISOString()
+                        }]
+                    }));
+                }
             } catch (e) { console.error(e); } finally { setIsTyping(false); }
         }
     };
@@ -318,6 +407,79 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
                 </div>
             </main>
 
+            {/* Feedback Modal */}
+            {isFeedbackOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2001] flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-gray-800 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
+                        <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                            <h2 className="text-xl font-bold dark:text-white">Feedback & Support</h2>
+                            <button onClick={() => setIsFeedbackOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-sm font-semibold text-gray-500 uppercase mb-2 block">Message Type</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Feedback', 'Bug Report', 'Question', 'Suggestion', 'Other'].map(type => (
+                                            <button 
+                                                key={type}
+                                                onClick={() => setFeedbackType(type)}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${feedbackType === type ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+                                            >
+                                                {type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-semibold text-gray-500 uppercase mb-2 block">Your Message</label>
+                                    <textarea 
+                                        value={feedbackText}
+                                        onChange={(e) => setFeedbackText(e.target.value)}
+                                        placeholder="Tell us what's on your mind..."
+                                        className="w-full h-32 p-4 bg-gray-50 dark:bg-gray-700/50 border border-transparent focus:border-blue-500 rounded-2xl outline-none resize-none dark:text-white transition-all"
+                                    />
+                                </div>
+                                <button 
+                                    onClick={handleSendFeedback}
+                                    disabled={!feedbackText.trim() || isSendingFeedback}
+                                    className={`w-full py-3.5 rounded-2xl font-bold transition-all ${!feedbackText.trim() || isSendingFeedback ? 'bg-gray-100 text-gray-400 dark:bg-gray-700' : 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'}`}
+                                >
+                                    {isSendingFeedback ? 'Sending...' : 'Send Message'}
+                                </button>
+                            </div>
+
+                            <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase mb-4">My Messages</h3>
+                                <div className="space-y-3">
+                                    {feedbackMessages.length === 0 ? (
+                                        <p className="text-center text-gray-400 text-sm py-4">No messages sent yet.</p>
+                                    ) : (
+                                        feedbackMessages.map(msg => (
+                                            <div key={msg.id} className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-2xl border border-gray-100 dark:border-gray-700">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">{msg.type}</span>
+                                                    <span className="text-[10px] text-gray-400">{new Date(msg.timestamp).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-sm text-gray-700 dark:text-gray-200">{msg.text}</p>
+                                                {msg.response && (
+                                                    <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-xl border border-blue-50 dark:border-blue-900/20">
+                                                        <span className="text-[10px] font-bold text-blue-500 block mb-1">Admin Response</span>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-300 italic">{msg.response}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {editingMessageId && (
                 <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
@@ -331,7 +493,14 @@ const ChatScreen: React.FC<ChatScreenProps> = ({ settings, onUpdateSettings }) =
                 </div>
             )}
 
-            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={onUpdateSettings} onClearData={() => { localStorage.clear(); window.location.reload(); }} />
+            <SettingsModal 
+                isOpen={isSettingsOpen} 
+                onClose={() => setIsSettingsOpen(false)} 
+                settings={settings} 
+                onUpdateSettings={onUpdateSettings} 
+                onClearData={() => { localStorage.clear(); window.location.reload(); }}
+                onOpenFeedback={() => setIsFeedbackOpen(true)}
+            />
         </div>
     );
 };

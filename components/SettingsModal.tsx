@@ -8,6 +8,7 @@ interface SettingsModalProps {
   settings: AppSettings;
   onUpdateSettings: (settings: Partial<AppSettings>) => void;
   onClearData: () => void;
+  onOpenFeedback: () => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ 
@@ -15,7 +16,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose, 
   settings, 
   onUpdateSettings,
-  onClearData
+  onClearData,
+  onOpenFeedback
 }) => {
   const [storageSize, setStorageSize] = useState<string>('0 KB');
 
@@ -58,21 +60,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         <div className="p-6 overflow-y-auto space-y-6">
           
-          {/* Data Management */}
+          {/* Support Section */}
           <section>
-            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Data Management</h3>
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-gray-700 dark:text-gray-300">Used Storage</span>
-                <span className="font-mono text-gray-900 dark:text-white font-medium">{storageSize}</span>
-              </div>
-              <button 
-                onClick={handleClearCache}
-                className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition-colors shadow-sm"
-              >
-                Clear Cache
-              </button>
-            </div>
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Support</h3>
+            <button 
+              onClick={() => {
+                onClose();
+                onOpenFeedback();
+              }}
+              className="w-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              Feedback & Support
+            </button>
           </section>
 
           {/* Language */}
@@ -112,6 +112,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   {mode}
                 </button>
               ))}
+            </div>
+          </section>
+
+          {/* Data Management */}
+          <section>
+            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Data Management</h3>
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-gray-700 dark:text-gray-300">Used Storage</span>
+                <span className="font-mono text-gray-900 dark:text-white font-medium">{storageSize}</span>
+              </div>
+              <button 
+                onClick={handleClearCache}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition-colors shadow-sm"
+              >
+                Clear Cache
+              </button>
             </div>
           </section>
 
