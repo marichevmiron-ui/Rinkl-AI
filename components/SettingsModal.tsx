@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AppSettings, SUPPORTED_LANGUAGES, ThemeMode, Language } from '../types';
 
@@ -117,7 +118,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         <div className="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 text-center">
-          <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.3</p>
+          <p className="text-xs text-gray-400 font-mono">Rinkl AI v1.0.42</p>
         </div>
       </div>
     </div>

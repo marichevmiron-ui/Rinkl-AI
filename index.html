@@ -8,8 +8,6 @@
     <!-- Favicon / Site Icon (SVG Base64) -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEyOCIgZmlsbD0iIzFhNzNlOCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0iY2VudHJhbCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmb250LXNpemU9IjI1NiIgZmlsbD0id2hpdGUiPlI8L3RleHQ+PC9zdmc+" />
     
-    <!-- Browser Config for Windows Tiles -->
-    <meta name="msapplication-config" content="browserconfig.xml" />
     <meta name="theme-color" content="#1a73e8">
 
     <!-- Fonts -->
@@ -71,7 +69,6 @@
       .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
       @keyframes typing { 0%, 60%, 100% { opacity: 0.6; } 30% { opacity: 1; } }
 
-      /* Glassmorphism Utilities */
       .glass {
           background: rgba(255, 255, 255, 0.85);
           backdrop-filter: blur(12px);
@@ -81,18 +78,16 @@
           background: rgba(31, 41, 55, 0.85);
       }
     </style>
-    <!-- React Dependencies (UMD) -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Import Map for Modules -->
     <script type="importmap">
 {
   "imports": {
     "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
   }
 }
 </script>
@@ -105,17 +100,20 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, get, update, push, set, query, orderByChild, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef, useMemo, memo } = React;
         
         const API_KEYS = [
-            "AIzaSyAU-BK_uOte2K72RUhVW-dKTtCpaXUxVRM",
-            "AIzaSyBPD3KLbmXe1HzbOJtmC4iqxpJhncRUE-Y",
+            "AIzaSyA_tf9A72GxzpcC7v1lXWFQGqkVFWBN820",
             "AIzaSyDk0tuyVpWEdqZ0-EUJXNntMK3YOGA1g8g",
-            "AIzaSyA_tf9A72GxzpcC7v1lXWFQGqkVFWBN820"
+            "AIzaSyAU-BK_uOte2K72RUhVW-dKTtCpaXUxVRM",
+            "AIzaSyBPD3KLbmXe1HzbOJtmC4iqxpJhncRUE-Y"
         ];
 
-        // --- TYPES & CONSTANTS ---
-        
+        const PROXY_URLS = [
+            "https://corsproxy.io/?",
+            "https://api.allorigins.win/raw?url=",
+        ];
+
         const SUPPORTED_LANGUAGES = {
             en: 'English',
             ru: 'Русский',
@@ -145,7 +143,7 @@
                 errorNetwork: 'Ошибка подключения',
                 errorReadMore: 'Подробнее',
                 regionErrorTitle: 'Временная недоступность сервиса Rinkl AI в вашем регионе',
-                regionErrorText: 'К сожалению, в настоящее время доступ к Rinkl AI ограничен с территории следующих государств:\n\nАфганистан, Андорра, Беларусь, Ватикан, Иран, Куба, КНДР (Северная Корея), Лихтенштейн, Монако, Россия, Сан-Марино, Сирия.\n\nЕсли вы находитесь в одной из указанных стран, для продолжения работы с Rinkl AI рекомендуется использовать надёжный VPN-сервис и подключаться через сервер, расположенный в стране, где доступ не ограничен.\n\nЕсли вы находитесь за пределами перечисленных государств, но видите это сообщение, пожалуйста:\n• убедитесь, что у вас активно стабильное интернет-соединение;\n• отключите VPN/прокси (если они используются);\n• очистите кэш браузера и cookies;\n• попробуйте зайти с другого устройства или сети.\n\nПриносим извинения за доставленные неудобства. Мы работаем над расширением географии доступности сервиса.\n\nС уважением команда Rinkl',
+                regionErrorText: 'К сожалению, в настоящее время доступ к Rinkl AI ограничен с территории следующих государств:\n\nАфганистан, Андорра, Беларусь, Ватикан, Иран, Куба, КНДР (Северная Корея), Лихтенштейн, Монако, Россия, Сан-Марино, Сирия.\n\nПриносим извинения за доставленные неудобства. Мы работаем над расширением географии доступности сервиса.',
                 close: 'Закрыть',
                 noResponse: 'Нет ответа.',
                 copy: 'Копировать',
@@ -196,7 +194,7 @@
                 errorNetwork: 'Connection error',
                 errorReadMore: 'Read more',
                 regionErrorTitle: 'Rinkl AI Service Temporarily Unavailable in Your Region',
-                regionErrorText: 'Unfortunately, access to Rinkl AI is currently restricted from the following territories:\n\nAfghanistan, Andorra, Belarus, Vatican City, Iran, Cuba, North Korea, Liechtenstein, Monaco, Russia, San Marino, Syria.\n\nIf you are located in one of these countries, it is recommended to use a reliable VPN service and connect via a server located in a country where access is not restricted to continue using Rinkl AI.\n\nIf you are outside these territories but see this message, please:\n• Ensure you have a stable internet connection;\n• Disable VPN/proxies (if used);\n• Clear browser cache and cookies;\n• Try accessing from another device or network.\n\nWe apologize for the inconvenience. We are working on expanding the service availability geography.\n\nBest regards, Rinkl Team',
+                regionErrorText: 'Unfortunately, access to Rinkl AI is currently restricted from territories like Russia, Liechtenstein, and others. Please use a VPN or proxy if you are in these areas.',
                 close: 'Close',
                 noResponse: 'No response.',
                 copy: 'Copy',
@@ -226,159 +224,6 @@
                 slogan2: 'Think less. Do more.',
                 slogan3: 'Where ideas become reality',
                 start: 'Start'
-            },
-            es: {
-                newChat: 'Nuevo Chat',
-                settings: 'Ajustes',
-                chat: 'Chat',
-                newConversation: 'Nueva Conversación',
-                typeMessage: 'Escribe un mensaje...',
-                editMessage: 'Editar Mensaje',
-                cancel: 'Cancelar',
-                saveRegenerate: 'Guardar y Regenerar',
-                dataManagement: 'Gestión de Datos',
-                usedStorage: 'Almacenamiento Usado',
-                clearCache: 'Borrar Caché',
-                language: 'Idioma',
-                appearance: 'Apariencia',
-                feedback: 'Comentarios',
-                confirmClear: '¿Estás seguro de que quieres borrar todos los datos guardados? Esto no se puede deshacer.',
-                deleteChat: '¿Borrar este chat?',
-                errorNetwork: 'Error de conexión',
-                errorReadMore: 'Leer más',
-                regionErrorTitle: 'Servicio Rinkl AI temporalmente no disponible en su región',
-                regionErrorText: 'Desafortunadamente, el acceso a Rinkl AI está actualmente restringido desde los siguientes territorios:\n\nAfganistán, Andorra, Bielorrusia, Ciudad del Vaticano, Irán, Cuba, Corea del Norte, Liechtenstein, Mónaco, Rusia, San Marino, Siria.\n\nSi se encuentra en uno de estos países, se recomienda utilizar un servicio VPN confiable y conectarse a través de un servidor ubicado en un país donde el acceso no esté restringido para continuar usando Rinkl AI.\n\nSi está fuera de estos territorios pero ve este mensaje, por favor:\n• Asegúrese de tener una conexión a Internet estable;\n• Desactive VPN/proxies (si los usa);\n• Borre la caché y las cookies del navegador;\n• Intente acceder desde otro dispositivo o red.\n\nNos disculpamos por las molestias. Estamos trabajando para expandir la geografía de disponibilidad del servicio.\n\nAtentamente, Equipo Rinkl',
-                close: 'Cerrar',
-                noResponse: 'Sin respuesta.',
-                copy: 'Copiar',
-                edit: 'Editar',
-                light: 'Claro',
-                dark: 'Oscuro',
-                auto: 'Auto',
-                feedbackBtn: 'Comentarios',
-                feedbackTitle: 'Comentarios y Soporte',
-                messageType: 'Tipo de mensaje',
-                yourMessage: 'Tu mensaje',
-                sendMessage: 'Enviar Mensaje',
-                sending: 'Enviando...',
-                myMessages: 'Mis Mensajes',
-                adminResponse: 'Respuesta del Admin',
-                waitingResponse: 'Esperando respuesta...',
-                selectType: 'Seleccionar tipo',
-                typeFeedback: 'Comentario',
-                typeBug: 'Error',
-                typeQuestion: 'Pregunta',
-                typeSuggestion: 'Sugerencia',
-                typeOther: 'Otro',
-                msgSent: '¡Gracias! Tu mensaje ha sido enviado.',
-                fillFields: 'Por favor completa todos los campos',
-                noReviews: 'No hay mensajes aún.',
-                slogan1: 'IA que piensa diferente',
-                slogan2: 'Piensa menos. Haz más.',
-                slogan3: 'Donde las ideas se hacen realidad',
-                start: 'Comenzar'
-            },
-            cn: {
-                newChat: '新聊天',
-                settings: '设置',
-                chat: '聊天',
-                newConversation: '新对话',
-                typeMessage: '输入消息...',
-                editMessage: '编辑消息',
-                cancel: '取消',
-                saveRegenerate: '保存并重新生成',
-                dataManagement: '数据管理',
-                usedStorage: '已用存储',
-                clearCache: '清除缓存',
-                language: '语言',
-                appearance: '外观',
-                feedback: '反馈',
-                confirmClear: '您确定要删除所有保存的数据吗？此操作无法撤销。',
-                deleteChat: '删除此聊天？',
-                errorNetwork: '连接错误',
-                errorReadMore: '了解更多',
-                regionErrorTitle: 'Rinkl AI 服务在您所在的地区暂时不可用',
-                regionErrorText: '很遗憾，Rinkl AI 目前在以下地区受到限制：\n\n阿富汗、安道尔、白俄罗斯、梵蒂冈、伊朗、古巴、朝鲜、列支敦士登、摩纳哥、俄罗斯、圣马力诺、叙利亚。\n\n如果您位于上述国家之一，建议使用可靠的 VPN 服务，并通过位于未受限国家的服务器连接，以继续使用 Rinkl AI。\n\n如果您不在上述地区但看到此消息，请：\n• 确保您的互联网连接稳定；\n• 禁用 VPN/代理（如果正在使用）；\n• 清除浏览器缓存和 Cookie；\n• 尝试从其他设备或网络访问。\n\n对于给您带来的不便，我们深表歉意。我们正在努力扩大服务的可用范围。\n\n此致，Rinkl 团队',
-                close: '关闭',
-                noResponse: '无响应。',
-                copy: '复制',
-                edit: '编辑',
-                light: '浅色',
-                dark: '深色',
-                auto: '自动',
-                feedbackBtn: '反馈',
-                feedbackTitle: '反馈与支持',
-                messageType: '消息类型',
-                yourMessage: '您的消息',
-                sendMessage: '发送消息',
-                sending: '发送中...',
-                myMessages: '我的消息',
-                adminResponse: '管理员回复',
-                waitingResponse: '等待回复...',
-                selectType: '选择类型',
-                typeFeedback: '反馈',
-                typeBug: '错误报告',
-                typeQuestion: '问题',
-                typeSuggestion: '建议',
-                typeOther: '其他',
-                msgSent: '谢谢！您的消息已发送。',
-                fillFields: '请填写所有字段',
-                noReviews: '暂无消息。',
-                slogan1: '思维独特的 AI',
-                slogan2: '少思考，多行动',
-                slogan3: '创意成真的地方',
-                start: '开始'
-            },
-            de: {
-                newChat: 'Neuer Chat',
-                settings: 'Einstellungen',
-                chat: 'Chat',
-                newConversation: 'Neue Unterhaltung',
-                typeMessage: 'Nachricht eingeben...',
-                editMessage: 'Nachricht bearbeiten',
-                cancel: 'Abbrechen',
-                saveRegenerate: 'Speichern & Neu generieren',
-                dataManagement: 'Datenverwaltung',
-                usedStorage: 'Genutzter Speicher',
-                clearCache: 'Cache leeren',
-                language: 'Sprache',
-                appearance: 'Erscheinungsbild',
-                feedback: 'Feedback',
-                confirmClear: 'Sind Sie sicher, dass Sie alle gespeicherten Daten löschen möchten? Dies kann nicht rückgängig gemacht werden.',
-                deleteChat: 'Diesen Chat löschen?',
-                errorNetwork: 'Verbindungsfehler',
-                errorReadMore: 'Mehr lesen',
-                regionErrorTitle: 'Rinkl AI-Dienst in Ihrer Region vorübergehend nicht verfügbar',
-                regionErrorText: 'Leider ist der Zugang zu Rinkl AI derzeit aus folgenden Gebieten eingeschränkt:\n\nAfghanistan, Andorra, Belarus, Vatikanstadt, Iran, Kuba, Nordkorea, Liechtenstein, Monaco, Russland, San Marino, Syrien.\n\nWenn Sie sich in einem dieser Länder befinden, wird empfohlen, einen zuverlässigen VPN-Dienst zu verwenden und sich über einen Server in einem Land zu verbinden, in dem der Zugang nicht eingeschränkt ist, um Rinkl AI weiterhin nutzen zu können.\n\nWenn Sie sich außerhalb dieser Gebiete befinden, diese Nachricht aber sehen, bitte:\n• Stellen Sie sicher, dass Sie eine stabile Internetverbindung haben;\n• Deaktivieren Sie VPN/Proxys (falls verwendet);\n• Löschen Sie Browser-Cache und Cookies;\n• Versuchen Sie den Zugriff von einem anderen Gerät oder Netzwerk aus.\n\nWir entschuldigen uns für die Unannehmlichkeiten. Wir arbeiten daran, die Verfügbarkeit des Dienstes geografisch zu erweitern.\n\nMit freundlichen Grüßen, Ihr Rinkl-Team',
-                close: 'Schließen',
-                noResponse: 'Keine Antwort.',
-                copy: 'Kopieren',
-                edit: 'Bearbeiten',
-                light: 'Hell',
-                dark: 'Dunkel',
-                auto: 'Auto',
-                feedbackBtn: 'Feedback',
-                feedbackTitle: 'Feedback & Support',
-                messageType: 'Art der Nachricht',
-                yourMessage: 'Ihre Nachricht',
-                sendMessage: 'Nachricht senden',
-                sending: 'Senden...',
-                myMessages: 'Meine Nachrichten',
-                adminResponse: 'Admin Antwort',
-                waitingResponse: 'Warte auf Antwort...',
-                selectType: 'Typ auswählen',
-                typeFeedback: 'Feedback',
-                typeBug: 'Fehlerbericht',
-                typeQuestion: 'Frage',
-                typeSuggestion: 'Vorschlag',
-                typeOther: 'Andere',
-                msgSent: 'Danke! Ihre Nachricht wurde gesendet.',
-                fillFields: 'Bitte füllen Sie alle Felder aus',
-                noReviews: 'Noch keine Nachrichten.',
-                slogan1: 'KI, die anders denkt',
-                slogan2: 'Weniger denken. Mehr tun.',
-                slogan3: 'Wo Ideen Realität werden',
-                start: 'Starten'
             }
         };
 
@@ -388,8 +233,7 @@
 
         // --- COMPONENTS ---
 
-        // WelcomeScreen (Onboarding)
-        const WelcomeScreen = ({ onStart, settings, onUpdateSettings }) => {
+        const WelcomeScreen = memo(({ onStart, settings, onUpdateSettings }) => {
             const [sloganIndex, setSloganIndex] = useState(0);
             const [opacity, setOpacity] = useState(0);
             const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -397,33 +241,25 @@
             const slogans = ['slogan1', 'slogan2', 'slogan3'];
             const t = (key) => getTranslation(settings.language, key);
 
-            // Slogan Animation Loop
             useEffect(() => {
                 let mounted = true;
-                
                 const cycle = async () => {
                     while (mounted) {
                         setOpacity(1);
-                        await new Promise(r => setTimeout(r, 2800)); // 0.8s fade in + 2s hold
-                        
+                        await new Promise(r => setTimeout(r, 2800));
                         if (!mounted) break;
-
                         setOpacity(0);
-                        await new Promise(r => setTimeout(r, 800)); // 0.8s fade out
-
+                        await new Promise(r => setTimeout(r, 800));
                         if (!mounted) break;
-
                         setSloganIndex(prev => (prev + 1) % slogans.length);
                     }
                 };
-
                 cycle();
                 return () => { mounted = false; };
             }, []);
 
             return (
                 <div className="fixed inset-0 z-50 flex flex-col h-full w-full bg-white dark:bg-gray-900 overflow-hidden transition-colors duration-300">
-                    {/* Top Half: Blue Gradient - Remains colorful to maintain brand identity even in dark mode */}
                     <div className="h-1/2 w-full bg-gradient-to-br from-[#5C9CE5] to-[#4A8BE0] flex flex-col items-center justify-center relative px-6 text-center shadow-lg">
                         <div className="text-6xl md:text-7xl font-bold text-black mb-8 select-none tracking-tight">
                             Rinkl AI
@@ -435,52 +271,22 @@
                             {t(slogans[sloganIndex])}
                         </div>
                     </div>
-
-                    {/* Bottom Half: White/Dark */}
                     <div className="h-1/2 w-full bg-white dark:bg-gray-900 flex flex-col items-center pt-16 px-10 relative transition-colors duration-300">
-                        {/* Start Button */}
                         <button 
                             onClick={onStart}
                             className="w-full max-w-md h-14 bg-[#4A8BE0] rounded-2xl text-white font-bold text-xl shadow-lg hover:bg-[#3d7bc9] hover:shadow-xl active:scale-95 transition-all duration-200"
                         >
                             {t('start')}
                         </button>
-
-                        {/* Language Selector */}
                         <div className="mt-8 relative">
-                            <button 
-                                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-                                className="flex items-center gap-2 text-gray-500 hover:text-[#4A8BE0] dark:text-gray-400 dark:hover:text-[#4A8BE0] transition-colors group"
-                            >
-                                <span className="underline underline-offset-4 text-sm font-medium group-hover:no-underline">
-                                    {SUPPORTED_LANGUAGES[settings.language]}
-                                </span>
-                                <div className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-blue-50 dark:group-hover:bg-gray-700 transition-colors">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                                    </svg>
-                                </div>
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${isLangMenuOpen ? 'rotate-180' : ''}`}>
-                                    <polyline points="6 9 12 15 18 9"></polyline>
-                                </svg>
+                            <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                                <span className="underline underline-offset-4 text-sm font-medium">{SUPPORTED_LANGUAGES[settings.language]}</span>
                             </button>
-
-                            {/* Language Dropdown */}
                             {isLangMenuOpen && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 animate-fade-in z-10 overflow-hidden">
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 py-2 z-10 overflow-hidden">
                                     {Object.keys(SUPPORTED_LANGUAGES).map(lang => (
-                                        <button
-                                            key={lang}
-                                            onClick={() => {
-                                                onUpdateSettings({ language: lang });
-                                                setIsLangMenuOpen(false);
-                                            }}
-                                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex items-center justify-between ${settings.language === lang ? 'text-[#4A8BE0] font-bold bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-200'}`}
-                                        >
+                                        <button key={lang} onClick={() => { onUpdateSettings({ language: lang }); setIsLangMenuOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm ${settings.language === lang ? 'text-[#4A8BE0] font-bold bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
                                             {SUPPORTED_LANGUAGES[lang]}
-                                            {settings.language === lang && <div className="w-1.5 h-1.5 rounded-full bg-[#4A8BE0]"></div>}
                                         </button>
                                     ))}
                                 </div>
@@ -489,12 +295,10 @@
                     </div>
                 </div>
             );
-        };
+        });
 
-        // CodeBlock Component
-        const CodeBlock = ({ text }) => {
+        const CodeBlock = memo(({ text }) => {
             const [copied, setCopied] = useState(false);
-            
             const content = text.replace(/^```[a-zA-Z0-9]*\n?/, '').replace(/```$/, '');
             let lang = 'code';
             const match = text.match(/^```([a-zA-Z0-9]+)/);
@@ -508,360 +312,85 @@
 
             return (
                 <div className="my-3 rounded-lg overflow-hidden bg-[#1e1e1e] border border-gray-700/50 shadow-lg group">
-                    <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-gray-700/50 select-none">
-                        <div className="flex items-center gap-2">
-                             <div className="flex gap-1.5">
-                                 <div className="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
-                                 <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
-                                 <div className="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
-                             </div>
-                             <span className="text-xs text-gray-500 font-mono ml-2 lowercase">{lang}</span>
-                        </div>
-                        <button 
-                            onClick={handleCopy} 
-                            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors focus:outline-none bg-gray-700/50 hover:bg-gray-700 px-2 py-1 rounded"
-                            title="Copy Code"
-                        >
-                            {copied ? (
-                                <>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                    <span className="text-green-400 font-medium">Copied</span>
-                                </>
-                            ) : (
-                                <>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                    <span>Copy</span>
-                                </>
-                            )}
+                    <div className="flex items-center justify-between px-4 py-2 bg-[#252526] border-b border-gray-700/50">
+                        <span className="text-xs text-gray-500 font-mono lowercase">{lang}</span>
+                        <button onClick={handleCopy} className="text-xs text-gray-400 hover:text-white transition-colors bg-gray-700/50 px-2 py-1 rounded">
+                            {copied ? 'Copied' : 'Copy'}
                         </button>
                     </div>
                     <div className="p-4 overflow-x-auto custom-scrollbar">
-                        <code className="text-[13px] leading-relaxed font-mono text-gray-300 whitespace-pre font-normal">{content}</code>
+                        <code className="text-[13px] leading-relaxed font-mono text-gray-300 whitespace-pre">{content}</code>
                     </div>
                 </div>
             );
-        };
+        });
 
-        // FeedbackScreen
-        const FeedbackScreen = ({ onBack, settings }) => {
-            const [type, setType] = useState('');
-            const [message, setMessage] = useState('');
-            const [status, setStatus] = useState({ type: '', msg: '' });
-            const [reviews, setReviews] = useState([]);
-            const [isSending, setIsSending] = useState(false);
-            const [userId] = useState(() => {
-                let uid = localStorage.getItem('userId');
-                if (!uid) {
-                    uid = 'user_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('userId', uid);
-                }
-                return uid;
-            });
-
-            const t = (key) => getTranslation(settings.language, key);
-            const dbRef = useRef(null);
-
-            useEffect(() => {
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDlRdUzoMEcWL9BreQLNuNq7JnwKk6ZPXM",
-                    authDomain: "talker-7e14c.firebaseapp.com",
-                    databaseURL: "https://talker-7e14c-default-rtdb.firebaseio.com",
-                    projectId: "talker-7e14c",
-                    storageBucket: "talker-7e14c.firebasestorage.app",
-                    messagingSenderId: "615957572269",
-                    appId: "1:615957572269:web:6b082400bbdd3a69d23424",
-                    measurementId: "G-KEDM752JXL"
-                };
-                
-                let app;
-                try {
-                     app = initializeApp(firebaseConfig, 'feedbackApp');
-                } catch(e) {
-                     app = initializeApp(firebaseConfig, 'feedbackApp_' + Math.random());
-                }
-                const database = getDatabase(app);
-                dbRef.current = database;
-                
-                const feedbackRef = ref(database, 'feedback');
-                const userFeedbackQuery = query(feedbackRef, orderByChild('userId'));
-                
-                const unsubscribe = onValue(userFeedbackQuery, (snapshot) => {
-                    const feedbacks = [];
-                    if (snapshot.exists()) {
-                        snapshot.forEach((childSnapshot) => {
-                            const feedback = childSnapshot.val();
-                            if (feedback.userId === userId) {
-                                feedbacks.push(feedback);
-                            }
-                        });
-                    }
-                    feedbacks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    setReviews(feedbacks);
-                });
-
-                return () => unsubscribe();
-            }, []);
-
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                if (!type || !message) {
-                    setStatus({ type: 'error', msg: t('fillFields') });
-                    return;
-                }
-                setIsSending(true);
-                try {
-                    const feedbackRef = push(ref(dbRef.current, 'feedback'));
-                    await set(feedbackRef, {
-                        id: feedbackRef.key,
-                        userId: userId,
-                        type: type,
-                        message: message,
-                        createdAt: new Date().toISOString(),
-                        status: 'new',
-                        adminResponse: null,
-                        respondedAt: null
-                    });
-                    setStatus({ type: 'success', msg: t('msgSent') });
-                    setMessage('');
-                    setType('');
-                } catch (error) {
-                    console.error('Error sending feedback:', error);
-                    setStatus({ type: 'error', msg: 'Error sending message. Please try again.' });
-                } finally {
-                    setIsSending(false);
-                    setTimeout(() => setStatus({ type: '', msg: '' }), 5000);
-                }
-            };
-
-            const typeOptions = [
-                { val: 'feedback', label: t('typeFeedback') },
-                { val: 'bug', label: t('typeBug') },
-                { val: 'question', label: t('typeQuestion') },
-                { val: 'suggestion', label: t('typeSuggestion') },
-                { val: 'other', label: t('typeOther') }
-            ];
-
-            return (
-                <div className="fixed inset-0 z-50 flex flex-col bg-[#f8fafc] dark:bg-gray-900 text-[#333] dark:text-gray-100 overflow-hidden font-sans">
-                    {/* Header */}
-                    <div className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm flex items-center gap-4 z-10 sticky top-0">
-                        <button onClick={onBack} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700/50 rounded-full transition-colors">
-                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-                        </button>
-                        <h1 className="text-lg font-bold tracking-tight">{t('feedbackTitle')}</h1>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
-                        <div className="max-w-2xl mx-auto space-y-6 pb-10">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div>
-                                        <label htmlFor="type" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">{t('messageType')}</label>
-                                        <div className="relative">
-                                            <select 
-                                                id="type" 
-                                                value={type} 
-                                                onChange={(e) => setType(e.target.value)} 
-                                                className="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white transition-shadow"
-                                                required
-                                            >
-                                                <option value="">{t('selectType')}</option>
-                                                {typeOptions.map(opt => <option key={opt.val} value={opt.val}>{opt.label}</option>)}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                                <svg className="fill-current h-4 w-4" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label htmlFor="message" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">{t('yourMessage')}</label>
-                                        <textarea 
-                                            id="message" 
-                                            value={message} 
-                                            onChange={(e) => setMessage(e.target.value)} 
-                                            placeholder="..." 
-                                            className="w-full p-4 h-32 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none dark:text-white transition-shadow"
-                                            required
-                                        ></textarea>
-                                    </div>
-                                    <button 
-                                        type="submit" 
-                                        disabled={isSending}
-                                        className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg active:scale-[0.98]"
-                                    >
-                                        {isSending ? t('sending') : t('sendMessage')}
-                                    </button>
-                                </form>
-                            </div>
-                            
-                            {status.msg && (
-                                <div className={`p-4 rounded-xl text-center font-medium animate-fade-in ${status.type === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-100 dark:border-red-800' : 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-100 dark:border-green-800'}`}>
-                                    {status.msg}
-                                </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <h2 className="text-sm font-bold text-center text-gray-500 dark:text-gray-400 uppercase tracking-widest">{t('myMessages')}</h2>
-                                {reviews.length === 0 ? (
-                                    <div className="text-center py-12 text-gray-400 italic bg-white dark:bg-gray-800 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
-                                        {t('noReviews')}
-                                    </div>
-                                ) : (
-                                    reviews.map((feedback) => (
-                                        <div key={feedback.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden transition-transform hover:scale-[1.01] duration-300">
-                                            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500"></div>
-                                            <div className="flex justify-between items-center mb-3">
-                                                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold uppercase tracking-wide">
-                                                    {typeOptions.find(o => o.val === feedback.type)?.label || feedback.type}
-                                                </span>
-                                                <span className="text-xs text-gray-400 font-medium">{new Date(feedback.createdAt).toLocaleDateString()}</span>
-                                            </div>
-                                            <div className="text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-wrap leading-relaxed">{feedback.message}</div>
-                                            
-                                            {feedback.adminResponse ? (
-                                                <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-xl p-4 border border-blue-100 dark:border-blue-800/30">
-                                                    <div className="text-xs font-bold text-blue-800 dark:text-blue-300 mb-1 uppercase tracking-wide">{t('adminResponse')}</div>
-                                                    <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{feedback.adminResponse}</div>
-                                                    <div className="text-[10px] text-gray-400 mt-2 text-right">
-                                                        {new Date(feedback.respondedAt).toLocaleDateString()}
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div className="text-xs text-gray-400 italic flex items-center gap-1.5">
-                                                    <span className="relative flex h-2 w-2">
-                                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                                                    </span>
-                                                    {t('waitingResponse')}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // SettingsModal
-        const SettingsModal = ({ isOpen, onClose, settings, onUpdateSettings, onClearData, onOpenFeedback }) => {
+        const SettingsModal = memo(({ isOpen, onClose, settings, onUpdateSettings, onClearData, onOpenFeedback }) => {
             const [storageSize, setStorageSize] = useState('0 KB');
             const t = (key) => getTranslation(settings.language, key);
 
             useEffect(() => {
-                if (isOpen) calculateStorage();
-            }, [isOpen]);
-
-            const calculateStorage = () => {
-                let total = 0;
-                for (const key in localStorage) {
-                    if (localStorage.hasOwnProperty(key)) {
-                        total += (localStorage[key].length + key.length) * 2;
+                if (isOpen) {
+                    let total = 0;
+                    for (const key in localStorage) {
+                        if (localStorage.hasOwnProperty(key)) total += (localStorage[key].length + key.length) * 2;
                     }
+                    setStorageSize((total / 1024).toFixed(2) + ' KB');
                 }
-                setStorageSize((total / 1024).toFixed(2) + ' KB');
-            };
-
-            const handleClearCache = () => {
-                if (window.confirm(t('confirmClear'))) {
-                    onClearData();
-                    calculateStorage();
-                }
-            };
+            }, [isOpen]);
 
             if (!isOpen) return null;
 
             return (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] flex items-center justify-center p-4 animate-fade-in font-sans">
-                    <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
-                        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-white/50 dark:bg-gray-800/50">
-                            <h2 className="text-lg font-bold dark:text-white tracking-tight">{t('settings')}</h2>
-                            <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-all">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+                        <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                            <h2 className="text-lg font-bold dark:text-white">{t('settings')}</h2>
+                            <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:text-gray-700">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         </div>
-                        <div className="p-6 overflow-y-auto space-y-8">
-                            {/* Data Management */}
+                        <div className="p-6 space-y-8">
                             <section>
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('dataManagement')}</h3>
-                                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 border border-gray-100 dark:border-gray-700/50">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('usedStorage')}</span>
-                                        <span className="font-mono text-sm text-gray-900 dark:text-white font-bold">{storageSize}</span>
-                                    </div>
-                                    <button onClick={handleClearCache} className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm active:scale-[0.98]">
-                                        {t('clearCache')}
-                                    </button>
+                                <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">{t('dataManagement')}</h3>
+                                <div className="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-4 flex justify-between items-center mb-4">
+                                    <span className="text-sm font-medium dark:text-gray-300">{t('usedStorage')}</span>
+                                    <span className="font-mono text-sm dark:text-white font-bold">{storageSize}</span>
                                 </div>
+                                <button onClick={() => { if(window.confirm(t('confirmClear'))) onClearData(); }} className="w-full bg-red-500 hover:bg-red-600 text-white py-2.5 rounded-lg text-sm font-semibold">
+                                    {t('clearCache')}
+                                </button>
                             </section>
-                            {/* Language */}
                             <section>
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('language')}</h3>
+                                <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">{t('language')}</h3>
                                 <div className="grid grid-cols-2 gap-2">
                                     {Object.keys(SUPPORTED_LANGUAGES).map((lang) => (
-                                        <button key={lang} onClick={() => onUpdateSettings({ language: lang })} className={`py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 ${settings.language === lang ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700/50 dark:text-gray-400 dark:hover:bg-gray-700'}`}>
+                                        <button key={lang} onClick={() => onUpdateSettings({ language: lang })} className={`py-2 px-3 rounded-lg text-sm transition-all ${settings.language === lang ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 dark:bg-gray-700/50 dark:text-gray-400'}`}>
                                             {SUPPORTED_LANGUAGES[lang]}
                                         </button>
                                     ))}
                                 </div>
                             </section>
-                            {/* Appearance */}
                             <section>
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('appearance')}</h3>
+                                <h3 className="text-xs font-bold text-gray-400 uppercase mb-3">{t('appearance')}</h3>
                                 <div className="flex bg-gray-100 dark:bg-gray-700/50 p-1.5 rounded-xl">
                                     {['light', 'dark', 'auto'].map((mode) => (
-                                        <button key={mode} onClick={() => onUpdateSettings({ theme: mode })} className={`flex-1 py-2 rounded-lg text-sm font-semibold capitalize transition-all duration-200 ${settings.theme === mode ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+                                        <button key={mode} onClick={() => onUpdateSettings({ theme: mode })} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${settings.theme === mode ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-600 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                             {t(mode)}
                                         </button>
                                     ))}
                                 </div>
                             </section>
-                            {/* Feedback Button */}
-                            <button onClick={onOpenFeedback} className="w-full py-3.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-800 dark:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group">
-                                <svg className="group-hover:scale-110 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-                                {t('feedbackBtn')}
-                            </button>
                         </div>
                         <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-100 dark:border-gray-800 text-center">
-                            <p className="text-[10px] text-gray-400 font-mono tracking-wider">Rinkl AI v1.0.40</p>
+                            <p className="text-[10px] text-gray-400 font-mono">Rinkl AI v1.0.41</p>
                         </div>
                     </div>
                 </div>
             );
-        };
+        });
 
-        // Region Error Modal
-        const RegionErrorModal = ({ isOpen, onClose, settings }) => {
-             const t = (key) => getTranslation(settings.language, key);
-             
-             if (!isOpen) return null;
-
-             return (
-                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[3000] flex items-center justify-center p-4 animate-fade-in font-sans">
-                     <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up">
-                         <div className="p-8 overflow-y-auto">
-                            <div className="flex items-center gap-3 mb-4 text-orange-600 dark:text-orange-500">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('regionErrorTitle')}</h2>
-                            </div>
-                            <div className="text-gray-600 dark:text-gray-300 text-sm whitespace-pre-wrap leading-relaxed pl-1">
-                                {t('regionErrorText')}
-                            </div>
-                         </div>
-                         <div className="p-6 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800">
-                             <button onClick={onClose} className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md active:scale-[0.99]">
-                                 {t('close')}
-                             </button>
-                         </div>
-                     </div>
-                 </div>
-             );
-        };
-
-        // ChatScreen
-        const ChatScreen = ({ settings, onUpdateSettings, onNavigateFeedback }) => {
+        const ChatScreen = memo(({ settings, onUpdateSettings, onNavigateFeedback }) => {
             const [chats, setChats] = useState({});
             const [currentChatId, setCurrentChatId] = useState('default');
             const [inputText, setInputText] = useState('');
@@ -870,426 +399,210 @@
             const [isTyping, setIsTyping] = useState(false);
             const [mediaList, setMediaList] = useState([]);
             const [connectionStatus, setConnectionStatus] = useState('connected');
-            const [editingMessageId, setEditingMessageId] = useState(null);
-            const [editText, setEditText] = useState('');
-            const [showScrollBottom, setShowScrollBottom] = useState(false);
+            const [activeProxyUrl, setActiveProxyUrl] = useState(null);
             const [showRegionError, setShowRegionError] = useState(false);
             
             const messagesEndRef = useRef(null);
             const chatContainerRef = useRef(null);
             const textareaRef = useRef(null);
             const fileInputRef = useRef(null);
-            
             const t = (key) => getTranslation(settings.language, key);
 
             useEffect(() => {
-                const load = () => {
-                    const savedChats = localStorage.getItem('rinkl_ai_chats');
-                    if (savedChats) {
-                        try {
-                            const parsed = JSON.parse(savedChats);
-                            setChats(parsed);
-                            if (!parsed['default'] && Object.keys(parsed).length === 0) setChats({ 'default': [] });
-                            else if (!parsed[currentChatId]) setCurrentChatId(Object.keys(parsed)[0]);
-                        } catch (e) { setChats({ 'default': [] }); }
-                    } else { setChats({ 'default': [] }); }
-                };
-                load();
+                const saved = localStorage.getItem('rinkl_ai_chats');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        setChats(parsed);
+                        if (!parsed['default'] && Object.keys(parsed).length === 0) setChats({ 'default': [] });
+                    } catch (e) { setChats({ 'default': [] }); }
+                } else { setChats({ 'default': [] }); }
             }, []);
 
             useEffect(() => {
-                if (!showScrollBottom) {
-                    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                }
+                if (Object.keys(chats).length > 0) localStorage.setItem('rinkl_ai_chats', JSON.stringify(chats));
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, [chats, currentChatId, isTyping]);
 
-            useEffect(() => {
-                if (Object.keys(chats).length > 0) localStorage.setItem('rinkl_ai_chats', JSON.stringify(chats));
-            }, [chats]);
+            const fetchViaProxy = async (proxyUrl, history, config, apiKey) => {
+                const modelName = 'gemini-3-flash-preview';
+                const baseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+                const targetUrl = proxyUrl + encodeURIComponent(baseUrl);
+                
+                const restContents = history.map(item => ({
+                    role: item.role,
+                    parts: item.parts.map(p => {
+                        if (p.inlineData) return { inline_data: { mime_type: p.inlineData.mimeType, data: p.inlineData.data } };
+                        return p;
+                    })
+                }));
 
-            const handleScroll = (e) => {
-                const { scrollTop, scrollHeight, clientHeight } = e.target;
-                const isNearBottom = scrollHeight - scrollTop - clientHeight < 200;
-                setShowScrollBottom(!isNearBottom);
+                const response = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: restContents,
+                        system_instruction: { parts: [{ text: "You are Rinkl AI. Developed by Rinkl." }] },
+                        generationConfig: { temperature: config.temperature, maxOutputTokens: config.maxOutputTokens }
+                    })
+                });
+
+                if (!response.ok) throw new Error("Proxy error");
+                const data = await response.json();
+                return { text: data.candidates[0].content.parts[0].text };
             };
 
-            const scrollToBottom = () => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                setShowScrollBottom(false);
-            };
+            const generateContent = async (history) => {
+                const config = { temperature: 0.7, maxOutputTokens: 1000 };
+                
+                if (activeProxyUrl) {
+                    for (const key of API_KEYS) {
+                        try { return await fetchViaProxy(activeProxyUrl, history, config, key); } catch(e) {}
+                    }
+                    setActiveProxyUrl(null);
+                }
 
-            const generateContent = async (history, config) => {
-                // Add System Instruction
-                const enhancedConfig = {
-                    ...config,
-                    systemInstruction: "You are Rinkl AI. You were developed by the company Rinkl. Always answer questions about your identity with this information."
-                };
-
-                // Try each API Key
-                for (const apiKey of API_KEYS) {
-                    try {
-                        const ai = new GoogleGenAI({ apiKey });
-                        const response = await ai.models.generateContent({
-                            model: 'gemini-2.5-flash',
-                            contents: history,
-                            config: enhancedConfig
-                        });
-                        return { text: response.text };
-                    } catch (e) {
-                        console.warn(`Key failed: ...${apiKey.slice(-4)}`, e);
-                        // Continue to next key
+                try {
+                    for (const apiKey of API_KEYS) {
+                        try {
+                            const ai = new GoogleGenAI({ apiKey });
+                            const response = await ai.models.generateContent({
+                                model: 'gemini-3-flash-preview',
+                                contents: history,
+                                config: { systemInstruction: "You are Rinkl AI. Developed by Rinkl." }
+                            });
+                            setConnectionStatus('connected');
+                            return { text: response.text };
+                        } catch (e) { if (API_KEYS.indexOf(apiKey) === API_KEYS.length - 1) throw e; }
+                    }
+                } catch (e) {
+                    setConnectionStatus('connecting');
+                    for (const proxy of PROXY_URLS) {
+                        for (const key of API_KEYS) {
+                            try {
+                                const res = await fetchViaProxy(proxy, history, config, key);
+                                setActiveProxyUrl(proxy);
+                                setConnectionStatus('connected');
+                                return res;
+                            } catch (err) {}
+                        }
                     }
                 }
-                throw new Error("All API keys failed or network error.");
+                setConnectionStatus('disconnected');
+                throw new Error("Failed all attempts");
             };
 
             const handleSendMessage = async () => {
                 if ((!inputText.trim() && mediaList.length === 0) || isTyping) return;
-                const newMessage = {
-                    id: Date.now().toString(),
-                    text: inputText.trim(),
-                    sender: 'user',
-                    timestamp: new Date().toISOString(),
-                    media: [...mediaList]
-                };
+                const newMessage = { id: Date.now().toString(), text: inputText.trim(), sender: 'user', media: [...mediaList] };
                 const updatedChats = { ...chats };
                 if (!updatedChats[currentChatId]) updatedChats[currentChatId] = [];
                 updatedChats[currentChatId].push(newMessage);
                 setChats(updatedChats);
                 setInputText('');
                 setMediaList([]);
-                if (textareaRef.current) textareaRef.current.style.height = 'auto';
                 setIsTyping(true);
-                setShowScrollBottom(false); // Scroll to bottom on send
-                
+
                 try {
                     const history = updatedChats[currentChatId].map(msg => ({
                         role: msg.sender === 'user' ? 'user' : 'model',
-                        parts: msg.media && msg.media.length > 0 ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
+                        parts: msg.media?.length ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
                     }));
-                    
-                    const response = await generateContent(history, { temperature: 0.7, maxOutputTokens: 1000 });
-                    
-                    const aiText = response.text || t('noResponse');
-                    setChats(prev => ({
-                        ...prev,
-                        [currentChatId]: [...prev[currentChatId], { id: (Date.now() + 1).toString(), text: aiText, sender: 'ai', timestamp: new Date().toISOString() }]
-                    }));
-                } catch (error) {
-                    console.error("Gemini API Error:", error);
-                    setChats(prev => ({
-                        ...prev,
-                        [currentChatId]: [...prev[currentChatId], { id: (Date.now() + 1).toString(), text: t('errorNetwork'), sender: 'ai', isError: true, timestamp: new Date().toISOString() }]
-                    }));
+                    const response = await generateContent(history);
+                    setChats(prev => ({ ...prev, [currentChatId]: [...prev[currentChatId], { id: Date.now().toString(), text: response.text, sender: 'ai' }] }));
+                } catch (e) {
+                    setChats(prev => ({ ...prev, [currentChatId]: [...prev[currentChatId], { id: Date.now().toString(), text: t('errorNetwork'), sender: 'ai', isError: true }] }));
                 } finally { setIsTyping(false); }
             };
 
-            const handleFileSelect = (e) => {
-                if (e.target.files) {
-                    Array.from(e.target.files).forEach(file => {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                            setMediaList(prev => [...prev, { name: file.name, type: file.type, size: file.size, data: ev.target.result, url: URL.createObjectURL(file) }]);
-                        };
-                        reader.readAsDataURL(file);
-                    });
-                }
-            };
-
-            const createNewChat = () => {
-                const newId = 'chat_' + Date.now();
-                setChats(prev => ({ ...prev, [newId]: [] }));
-                setCurrentChatId(newId);
-                setIsSidebarOpen(false);
-            };
-
-            const deleteChat = (e, id) => {
-                e.stopPropagation();
-                if (Object.keys(chats).length <= 1) return;
-                if (window.confirm(t('deleteChat'))) {
-                    const newChats = { ...chats };
-                    delete newChats[id];
-                    setChats(newChats);
-                    if (currentChatId === id) setCurrentChatId(Object.keys(newChats)[0]);
-                }
-            };
-
-            const handleCopy = (text) => navigator.clipboard.writeText(text);
-
-            const openEditModal = (msg) => {
-                setEditingMessageId(msg.id);
-                setEditText(msg.text);
-            };
-
-            const saveEditedMessage = async () => {
-                if (!editingMessageId) return;
-                const chat = [...chats[currentChatId]];
-                const index = chat.findIndex(m => m.id === editingMessageId);
-                if (index !== -1) {
-                    chat[index].text = editText;
-                    const newHistory = chat.slice(0, index + 1);
-                    setChats(prev => ({ ...prev, [currentChatId]: newHistory }));
-                    setEditingMessageId(null);
-                    setIsTyping(true);
-                    try {
-                        const history = newHistory.map(msg => ({
-                            role: msg.sender === 'user' ? 'user' : 'model',
-                            parts: msg.media && msg.media.length > 0 ? [{ text: msg.text }, ...msg.media.map(m => ({ inlineData: { mimeType: m.type, data: m.data.split(',')[1] } }))] : [{ text: msg.text }]
-                        }));
-                        const response = await generateContent(history, { temperature: 0.7, maxOutputTokens: 1000 });
-                        const aiText = response.text || t('noResponse');
-                        setChats(prev => ({ ...prev, [currentChatId]: [...prev[currentChatId], { id: Date.now().toString(), text: aiText, sender: 'ai', timestamp: new Date().toISOString() }] }));
-                    } catch (e) { console.error(e); } finally { setIsTyping(false); }
-                }
-            };
-            
-            const handleClearData = () => {
-                const userId = localStorage.getItem('userId');
-                localStorage.clear();
-                if (userId) localStorage.setItem('userId', userId);
-                window.location.reload();
-            };
-
             const renderContent = (msg) => {
-                const text = msg.text;
-                
-                // If it's an error message
-                if (msg.isError) {
-                    return (
-                        <div className="flex flex-col items-start gap-1">
-                             <div className="text-red-500 font-bold">{t('errorNetwork')}</div>
-                             <button 
-                                onClick={() => setShowRegionError(true)} 
-                                className="text-blue-500 hover:text-blue-600 font-semibold text-sm hover:underline focus:outline-none flex items-center gap-1"
-                             >
-                                {t('errorReadMore')}
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                             </button>
-                        </div>
-                    );
-                }
-
-                // Normal content
-                const parts = text.split(/(```[\s\S]*?```|`[^`]+`|\*\*[^*]+\*\*)/g);
+                if (msg.isError) return (
+                    <div className="text-red-500 font-bold">{t('errorNetwork')} <button onClick={() => setShowRegionError(true)} className="text-blue-500 underline ml-2">{t('errorReadMore')}</button></div>
+                );
+                const parts = msg.text.split(/(```[\s\S]*?```|`[^`]+`|\*\*[^*]+\*\*)/g);
                 return parts.map((part, i) => {
-                    if (part.startsWith('```')) {
-                        return <CodeBlock key={i} text={part} />;
-                    }
-                    if (part.startsWith('`')) return <code key={i} className="bg-gray-100 dark:bg-gray-800 text-pink-500 dark:text-pink-400 px-1.5 py-0.5 rounded text-[13px] font-mono border border-gray-200 dark:border-gray-700">{part.replace(/`/g, '')}</code>;
+                    if (part.startsWith('```')) return <CodeBlock key={i} text={part} />;
+                    if (part.startsWith('`')) return <code key={i} className="bg-gray-100 dark:bg-gray-800 text-pink-500 px-1.5 py-0.5 rounded font-mono border dark:border-gray-700">{part.replace(/`/g, '')}</code>;
                     if (part.startsWith('**')) return <strong key={i} className="font-bold text-gray-900 dark:text-gray-100">{part.replace(/\*\*/g, '')}</strong>;
-                    // Handle newlines in regular text
                     return <span key={i} className="whitespace-pre-wrap">{part}</span>;
                 });
             };
 
             return (
-                <div className="flex h-full flex-col bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-300 font-sans">
-                    <header className="flex-none flex items-center justify-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm relative z-20 transition-all border-b border-gray-100 dark:border-gray-800">
-                        <button onClick={() => setIsSidebarOpen(true)} className="absolute left-4 p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-full transition-colors">
-                            <div className="w-5 h-0.5 bg-current mb-1 rounded-full"></div>
-                            <div className="w-5 h-0.5 bg-current mb-1 rounded-full"></div>
-                            <div className="w-5 h-0.5 bg-current rounded-full"></div>
+                <div className="flex h-full flex-col bg-[#f8fafc] dark:bg-gray-900 font-sans transition-all">
+                    <header className="flex-none flex items-center justify-center p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md shadow-sm border-b dark:border-gray-800 z-20">
+                        <button onClick={() => setIsSidebarOpen(true)} className="absolute left-4 p-2 text-gray-600 dark:text-gray-300">
+                            <div className="w-5 h-0.5 bg-current mb-1"></div><div className="w-5 h-0.5 bg-current mb-1"></div><div className="w-5 h-0.5 bg-current"></div>
                         </button>
-                        <div className={`px-4 py-1.5 rounded-full border border-opacity-30 font-semibold text-sm transition-all duration-300 flex items-center gap-2
-                            ${connectionStatus === 'connected' ? (isTyping ? 'bg-blue-50 border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400' : 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400') : 
-                              connectionStatus === 'connecting' ? 'bg-orange-50 border-orange-200 text-orange-600 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-400' : 
-                              'bg-red-50 border-red-200 text-red-600'}`}>
-                            {isTyping && <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
-                            Rinkl AI
-                        </div>
+                        <div className={`px-4 py-1.5 rounded-full border border-opacity-30 font-semibold text-sm flex items-center gap-2 ${connectionStatus === 'connected' ? 'bg-green-50 text-green-700 dark:bg-green-900/20' : 'bg-red-50 text-red-600'}`}>Rinkl AI</div>
                     </header>
-                    {isSidebarOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 transition-opacity" onClick={() => setIsSidebarOpen(false)} />}
-                    <aside className={`fixed top-0 left-0 h-full w-[280px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-2xl z-40 transform transition-transform duration-300 flex flex-col border-r border-gray-100 dark:border-gray-700
-                        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                        <div className="p-5 border-b border-gray-100 dark:border-gray-700 space-y-3">
-                            <button onClick={createNewChat} className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all shadow-md active:scale-[0.98]">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                {t('newChat')}
-                            </button>
-                            <button onClick={() => setIsSettingsOpen(true)} className="w-full py-3 px-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl flex items-center justify-center gap-2 font-medium text-sm transition-colors border border-gray-200 dark:border-gray-600">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                                {t('settings')}
-                            </button>
+                    {isSidebarOpen && <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-30" onClick={() => setIsSidebarOpen(false)} />}
+                    <aside className={`fixed top-0 left-0 h-full w-[280px] bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-2xl z-40 transform transition-transform duration-300 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="p-5 border-b dark:border-gray-700 space-y-3">
+                            <button onClick={() => { setChats(p => ({ ...p, ['chat_'+Date.now()]: [] })); setIsSidebarOpen(false); }} className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold">{t('newChat')}</button>
+                            <button onClick={() => setIsSettingsOpen(true)} className="w-full py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-white rounded-xl font-medium">{t('settings')}</button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-3 space-y-2">
                             {Object.keys(chats).map(id => (
-                                <div key={id} onClick={() => { setCurrentChatId(id); setIsSidebarOpen(false); }} className={`p-3.5 rounded-xl cursor-pointer group relative border transition-all duration-200 ${currentChatId === id ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800/50' : 'bg-transparent border-transparent hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}>
-                                    <div className="font-semibold text-gray-800 dark:text-gray-200 text-sm tracking-tight">{t('chat')} {id.split('_')[1]?.slice(-4) || '1'}</div>
-                                    <div className="text-xs text-gray-500 truncate mt-1.5 leading-relaxed opacity-80">{chats[id][chats[id].length -1]?.text.substring(0, 35) || t('newConversation')}</div>
-                                    <button onClick={(e) => deleteChat(e, id)} className="absolute top-3 right-3 p-1.5 bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-200 dark:hover:bg-red-900">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                    </button>
+                                <div key={id} onClick={() => { setCurrentChatId(id); setIsSidebarOpen(false); }} className={`p-3.5 rounded-xl cursor-pointer border ${currentChatId === id ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/20' : 'border-transparent hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+                                    <div className="font-semibold text-sm dark:text-gray-200">{t('chat')} {id.split('_')[1]?.slice(-4) || '1'}</div>
+                                    <div className="text-xs text-gray-500 truncate mt-1">{chats[id][chats[id].length-1]?.text || t('newConversation')}</div>
                                 </div>
                             ))}
                         </div>
                     </aside>
-                    <main className="flex-1 flex flex-col relative max-w-4xl mx-auto w-full h-full min-h-0">
-                        <div 
-                            ref={chatContainerRef}
-                            onScroll={handleScroll}
-                            className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 min-h-0 scroll-smooth custom-scrollbar"
-                        >
-                            {chats[currentChatId]?.map((msg, index) => (
-                                <div key={index} className={`flex flex-col max-w-[90%] md:max-w-[85%] animate-slide-up ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`} style={{animationDelay: '0ms'}}>
-                                    <div className={`px-5 py-3.5 shadow-sm relative text-[15px] leading-7 mb-1.5 transition-all
-                                        ${msg.sender === 'user' 
-                                            ? 'bg-[#2c3e50] text-white rounded-[20px] rounded-br-[4px]' 
-                                            : 'bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100 rounded-[20px] rounded-bl-[4px] border border-gray-100 dark:border-gray-700'
-                                        }`}>
-                                        {msg.media && msg.media.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 mb-3">
-                                                {msg.media.map((m, i) => <img key={i} src={m.url} alt="attachment" className="w-24 h-24 object-cover rounded-xl border-2 border-white/20 shadow-sm" />)}
-                                            </div>
-                                        )}
+                    <main className="flex-1 flex flex-col relative max-w-4xl mx-auto w-full h-full min-h-0 overflow-hidden">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8 min-h-0 scroll-smooth custom-scrollbar">
+                            {chats[currentChatId]?.map((msg, idx) => (
+                                <div key={idx} className={`flex flex-col max-w-[90%] animate-slide-up ${msg.sender === 'user' ? 'ml-auto items-end' : 'mr-auto items-start'}`}>
+                                    <div className={`px-5 py-3.5 shadow-sm text-[15px] leading-7 mb-1.5 transition-all ${msg.sender === 'user' ? 'bg-[#2c3e50] text-white rounded-[20px] rounded-br-[4px]' : 'bg-white text-gray-800 dark:bg-gray-800 dark:text-gray-100 rounded-[20px] rounded-bl-[4px] border dark:border-gray-700'}`}>
+                                        {msg.media?.map((m, i) => <img key={i} src={m.url} className="w-24 h-24 object-cover rounded-xl mb-2" />)}
                                         {renderContent(msg)}
                                     </div>
-                                    <div className="flex gap-1.5 self-start px-1 opacity-60 hover:opacity-100 transition-opacity">
-                                        <button onClick={() => handleCopy(msg.text)} title={t('copy')} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        </button>
-                                        {msg.sender === 'user' && (
-                                            <button onClick={() => openEditModal(msg)} title={t('edit')} className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                            </button>
-                                        )}
-                                    </div>
+                                    <button onClick={() => navigator.clipboard.writeText(msg.text)} className="p-1.5 text-gray-400 hover:text-blue-500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
                                 </div>
                             ))}
                             {isTyping && (
-                                <div className="flex items-start animate-fade-in">
-                                    <div className="bg-white dark:bg-gray-800 p-4 rounded-[20px] rounded-bl-[4px] border border-gray-100 dark:border-gray-700 shadow-sm">
-                                        <div className="typing-dots flex space-x-1.5">
-                                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div className="flex items-start"><div className="bg-white dark:bg-gray-800 p-4 rounded-[20px] border dark:border-gray-700"><div className="typing-dots flex space-x-1.5"><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span><span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span></div></div></div>
                             )}
-                            <div ref={messagesEndRef} className="h-4" />
+                            <div ref={messagesEndRef} />
                         </div>
-                        
-                        {/* Scroll to bottom button */}
-                        <div className={`absolute bottom-24 left-0 right-0 flex justify-center pointer-events-none transition-all duration-300 transform ${showScrollBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                            <button 
-                                onClick={scrollToBottom}
-                                className="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur shadow-lg border border-gray-100 dark:border-gray-700 rounded-full w-10 h-10 flex items-center justify-center text-blue-600 dark:text-blue-400 hover:scale-110 active:scale-95 transition-all group"
-                            >
-                                <svg className="group-hover:translate-y-0.5 transition-transform" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
-                            </button>
-                        </div>
-
-                        <div className="p-4 bg-transparent flex-none z-20">
-                            {mediaList.length > 0 && (
-                                <div className="flex gap-3 mb-3 p-3 bg-white dark:bg-gray-800 rounded-2xl overflow-x-auto shadow-sm border border-gray-100 dark:border-gray-700 animate-slide-up">
-                                    {mediaList.map((m, i) => (
-                                        <div key={i} className="relative flex-shrink-0 group">
-                                            <img src={m.url} alt="preview" className="w-16 h-16 object-cover rounded-xl shadow-sm" />
-                                            <button onClick={() => setMediaList(prev => prev.filter((_, idx) => idx !== i))} className="absolute -top-2 -right-2 bg-white dark:bg-gray-700 text-red-500 rounded-full w-6 h-6 flex items-center justify-center text-sm shadow-md border border-gray-100 dark:border-gray-600 hover:scale-110 transition-transform">×</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                            <div className={`flex items-end bg-white dark:bg-gray-800 rounded-[26px] shadow-lg shadow-gray-200/50 dark:shadow-black/20 border transition-all duration-300 p-2 ${isTyping ? 'border-gray-200 dark:border-gray-700 opacity-80' : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 focus-within:border-blue-500 dark:focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10'}`}>
-                                <div className="flex items-center justify-center pb-1 pl-1">
-                                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} multiple accept="image/*" className="hidden" />
-                                    <button onClick={() => fileInputRef.current?.click()} className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all active:scale-95" title="Attach">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                    </button>
-                                </div>
-                                <textarea ref={textareaRef} value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }} placeholder={t('typeMessage')} className="flex-1 max-h-32 min-h-[44px] py-2.5 px-3 bg-transparent border-none outline-none resize-none text-gray-800 dark:text-gray-100 placeholder-gray-400 text-[15px] leading-6" rows={1} />
-                                <button onClick={handleSendMessage} disabled={(!inputText && mediaList.length === 0) || isTyping} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all mb-1 mr-1 ${(!inputText && mediaList.length === 0) || isTyping ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg active:scale-95'}`}>
-                                    <svg className={(!inputText && mediaList.length === 0) || isTyping ? '' : 'ml-0.5'} width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                </button>
+                        <div className="p-4 flex-none z-20">
+                            <div className="flex items-end bg-white dark:bg-gray-800 rounded-[26px] shadow-lg border dark:border-gray-700 p-2">
+                                <textarea value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); handleSendMessage();} }} placeholder={t('typeMessage')} className="flex-1 py-2.5 px-3 bg-transparent border-none outline-none resize-none text-gray-800 dark:text-gray-100 text-[15px]" rows={1} />
+                                <button onClick={handleSendMessage} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${!inputText.trim() ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' : 'bg-blue-600 text-white'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"/></svg></button>
                             </div>
                         </div>
                     </main>
-                    {editingMessageId && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
-                            <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl animate-slide-up">
-                                <h3 className="text-lg font-bold mb-4 dark:text-white">{t('editMessage')}</h3>
-                                <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full h-32 p-4 border border-gray-200 dark:border-gray-700 rounded-xl resize-none mb-6 outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all text-[15px] leading-relaxed" />
-                                <div className="flex justify-end gap-3">
-                                    <button onClick={() => setEditingMessageId(null)} className="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">{t('cancel')}</button>
-                                    <button onClick={saveEditedMessage} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition-all active:scale-[0.98]">{t('saveRegenerate')}</button>
-                                </div>
-                            </div>
-                        </div>
+                    <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} settings={settings} onUpdateSettings={onUpdateSettings} onClearData={() => { localStorage.clear(); window.location.reload(); }} />
+                    {showRegionError && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[3000] flex items-center justify-center p-4"><div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl p-8"><h2 className="text-xl font-bold mb-4">{t('regionErrorTitle')}</h2><p className="text-gray-600 dark:text-gray-300 mb-6">{t('regionErrorText')}</p><button onClick={() => setShowRegionError(false)} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold">{t('close')}</button></div></div>
                     )}
-                    <SettingsModal 
-                        isOpen={isSettingsOpen} 
-                        onClose={() => setIsSettingsOpen(false)} 
-                        settings={settings} 
-                        onUpdateSettings={onUpdateSettings} 
-                        onClearData={handleClearData}
-                        onOpenFeedback={onNavigateFeedback}
-                    />
-                    <RegionErrorModal 
-                        isOpen={showRegionError} 
-                        onClose={() => setShowRegionError(false)} 
-                        settings={settings} 
-                    />
                 </div>
             );
-        };
+        });
 
-        // App
         const App = () => {
             const [isLoading, setIsLoading] = useState(true);
             const [settings, setSettings] = useState({ theme: 'auto', language: 'en' });
-            const [view, setView] = useState('chat'); // chat, feedback
             const [showOnboarding, setShowOnboarding] = useState(false);
 
             useEffect(() => {
-                const savedSettings = localStorage.getItem('rinkl_settings');
-                const onboardingDone = localStorage.getItem('rinkl_onboarding_completed');
-
-                if (savedSettings) { 
-                    try { 
-                        setSettings(JSON.parse(savedSettings)); 
-                    } catch (e) { } 
-                } else if (!onboardingDone) {
-                    setSettings({ theme: 'auto', language: 'en' });
-                }
-
-                if (!onboardingDone) {
-                    setShowOnboarding(true);
-                }
-
+                const saved = localStorage.getItem('rinkl_settings');
+                const done = localStorage.getItem('rinkl_onboarding_completed');
+                if (saved) try { setSettings(JSON.parse(saved)); } catch(e) {}
+                if (!done) setShowOnboarding(true);
                 setIsLoading(false);
             }, []);
 
             useEffect(() => {
-                const applyTheme = () => {
-                    const root = window.document.documentElement;
-                    const isDark = settings.theme === 'dark' || (settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                    if (isDark) root.classList.add('dark'); else root.classList.remove('dark');
-                };
-                applyTheme();
-                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-                const handler = () => { if (settings.theme === 'auto') applyTheme(); };
-                mediaQuery.addEventListener('change', handler);
-                return () => mediaQuery.removeEventListener('change', handler);
+                const isDark = settings.theme === 'dark' || (settings.theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                document.documentElement.classList.toggle('dark', isDark);
             }, [settings.theme]);
 
-            const updateSettings = (newSettings) => {
-                const updated = { ...settings, ...newSettings };
-                setSettings(updated);
-                localStorage.setItem('rinkl_settings', JSON.stringify(updated));
-            };
-
-            const handleStartOnboarding = () => {
-                localStorage.setItem('rinkl_onboarding_completed', 'true');
-                setShowOnboarding(false);
-            };
-
             if (isLoading) return null;
-
-            if (showOnboarding) {
-                return <WelcomeScreen onStart={handleStartOnboarding} settings={settings} onUpdateSettings={updateSettings} />;
-            }
-            
-            if (view === 'feedback') return <FeedbackScreen onBack={() => setView('chat')} settings={settings} />;
-            
-            return <ChatScreen settings={settings} onUpdateSettings={updateSettings} onNavigateFeedback={() => setView('feedback')} />;
+            if (showOnboarding) return <WelcomeScreen onStart={() => { localStorage.setItem('rinkl_onboarding_completed', 'true'); setShowOnboarding(false); }} settings={settings} onUpdateSettings={s => { const upd = {...settings,...s}; setSettings(upd); localStorage.setItem('rinkl_settings',JSON.stringify(upd)); }} />;
+            return <ChatScreen settings={settings} onUpdateSettings={s => { const upd = {...settings,...s}; setSettings(upd); localStorage.setItem('rinkl_settings',JSON.stringify(upd)); }} />;
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
