@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { SUPPORTED_LANGUAGES, Language } from './types';
+import { SUPPORTED_LANGUAGES, Language } from './types.ts';
 
 const FAREWELL_TEXTS: Record<Language, { body: string; signOff: string }> = {
   ru: {
