@@ -27,29 +27,33 @@ const FAREWELL_TEXTS: Record<Language, { body: string; signOff: string }> = {
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('ru');
-  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    // Load saved preferences
+    // Load saved language preference
     const savedLang = localStorage.getItem('rinkl_closure_lang') as Language;
     if (savedLang && SUPPORTED_LANGUAGES[savedLang]) {
       setLang(savedLang);
     }
 
-    const savedTheme = localStorage.getItem('rinkl_theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialDark = savedTheme === 'dark' || (!savedTheme && systemDark);
+    // Handle system theme automatically
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
-    setIsDark(initialDark);
-    document.documentElement.classList.toggle('dark', initialDark);
-  }, []);
+    const applyTheme = (e: MediaQueryList | MediaQueryListEvent) => {
+      if (e.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
 
-  const toggleTheme = () => {
-    const newDark = !isDark;
-    setIsDark(newDark);
-    document.documentElement.classList.toggle('dark', newDark);
-    localStorage.setItem('rinkl_theme', newDark ? 'dark' : 'light');
-  };
+    // Initial check
+    applyTheme(mediaQuery);
+
+    // Listen for system changes
+    mediaQuery.addEventListener('change', applyTheme);
+    
+    return () => mediaQuery.removeEventListener('change', applyTheme);
+  }, []);
 
   const changeLanguage = (newLang: Language) => {
     setLang(newLang);
@@ -61,19 +65,6 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-screen flex flex-col items-center justify-center relative p-6 bg-[#f8fafc] dark:bg-gray-900 transition-colors duration-500">
       
-      {/* Theme Toggle Button */}
-      <button 
-        onClick={toggleTheme}
-        className="absolute top-8 right-8 p-3 rounded-full bg-white dark:bg-gray-800 shadow-lg text-gray-600 dark:text-yellow-400 hover:scale-110 transition-all border border-gray-100 dark:border-gray-700"
-        aria-label="Toggle Theme"
-      >
-        {isDark ? (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-        ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        )}
-      </button>
-
       <div className="max-w-3xl w-full text-center animate-fade-in">
         {/* Brand Mark: Black R, Blue /////, Black NKL */}
         <div className="mb-12 flex justify-center items-center text-5xl md:text-6xl font-black tracking-tighter transition-all hover:scale-105">
